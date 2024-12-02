@@ -1,4 +1,4 @@
-# advent_of_code_2023
+# advent_of_code_2024
 
 Just my annual [Advent of Code](https://adventofcode.com/2024) solutions.
 
