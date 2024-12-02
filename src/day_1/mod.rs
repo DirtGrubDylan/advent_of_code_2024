@@ -1,3 +1,5 @@
+mod locations;
+
 use crate::util::file_reader::to_string_vector;
 
 pub fn run() {
@@ -7,10 +9,29 @@ pub fn run() {
     println!("Day 1 Part 2: {:?}", part_2(&input));
 }
 
-fn part_1(_inputs: &[String]) {
-    unimplemented!("Unimplemented!")
+fn part_1(input: &[String]) -> u32 {
+    locations::minimum_differences(input).into_iter().sum()
 }
 
-fn part_2(_input: &[String]) {
-    unimplemented!("Unimplemented!")
+fn part_2(input: &[String]) -> u32 {
+    locations::singularity_scores(input).into_iter().sum()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_day_1() {
+        let input = to_string_vector("test_inputs/day_1.txt").unwrap();
+
+        assert_eq!(part_1(&input), 11);
+    }
+
+    #[test]
+    fn test_day_2() {
+        let input = to_string_vector("test_inputs/day_1.txt").unwrap();
+
+        assert_eq!(part_2(&input), 31);
+    }
 }
