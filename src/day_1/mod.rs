@@ -22,14 +22,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_day_1() {
+    fn test_part_1() {
         let input = to_string_vector("test_inputs/day_1.txt").unwrap();
 
         assert_eq!(part_1(&input), 11);
     }
 
     #[test]
-    fn test_day_2() {
+    fn test_part_2() {
         let input = to_string_vector("test_inputs/day_1.txt").unwrap();
 
         assert_eq!(part_2(&input), 31);
