@@ -17,6 +17,23 @@ where
     pub y: T,
 }
 
+impl<T> Add<Point2d<T>> for Point2d<T>
+where
+    T: Add<Output = T>
+        + Sub<Output = T>
+        + Mul<Output = T>
+        + Div<Output = T>
+        + Ord
+        + Into<f64>
+        + Copy,
+{
+    type Output = Point2d<T>;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Point2d::new(self.x + rhs.x, self.y + rhs.y)
+    }
+}
+
 impl<T> From<(T, T)> for Point2d<T>
 where
     T: Add<Output = T>
@@ -138,7 +155,7 @@ mod tests {
 
         let expected = Point2d::new(8, 3);
 
-        let result = first.add(&second);
+        let result = first.add(second);
 
         assert_eq!(result, expected);
     }
