@@ -144,7 +144,7 @@ impl<'rhs> Add<&'rhs Solution> for Solution {
     }
 }
 
-impl<'lhs> Add<Solution> for &'lhs Solution {
+impl Add<Solution> for &Solution {
     type Output = Solution;
 
     fn add(self, rhs: Solution) -> Solution {
@@ -152,7 +152,7 @@ impl<'lhs> Add<Solution> for &'lhs Solution {
     }
 }
 
-impl<'lhs, 'rhs> Add<&'rhs Solution> for &'lhs Solution {
+impl<'rhs> Add<&'rhs Solution> for &Solution {
     type Output = Solution;
 
     fn add(self, rhs: &'rhs Solution) -> Solution {
@@ -179,7 +179,7 @@ impl<'rhs> Mul<&'rhs Solution> for Solution {
     }
 }
 
-impl<'lhs> Mul<Solution> for &'lhs Solution {
+impl Mul<Solution> for &Solution {
     type Output = Solution;
 
     fn mul(self, rhs: Solution) -> Solution {
@@ -187,7 +187,7 @@ impl<'lhs> Mul<Solution> for &'lhs Solution {
     }
 }
 
-impl<'lhs, 'rhs> Mul<&'rhs Solution> for &'lhs Solution {
+impl<'rhs> Mul<&'rhs Solution> for &Solution {
     type Output = Solution;
 
     fn mul(self, rhs: &'rhs Solution) -> Solution {
@@ -222,7 +222,7 @@ impl<'rhs> BitOr<&'rhs Solution> for Solution {
     }
 }
 
-impl<'lhs> BitOr<Solution> for &'lhs Solution {
+impl BitOr<Solution> for &Solution {
     type Output = Solution;
 
     fn bitor(self, rhs: Solution) -> Solution {
@@ -230,7 +230,7 @@ impl<'lhs> BitOr<Solution> for &'lhs Solution {
     }
 }
 
-impl<'lhs, 'rhs> BitOr<&'rhs Solution> for &'lhs Solution {
+impl<'rhs> BitOr<&'rhs Solution> for &Solution {
     type Output = Solution;
 
     fn bitor(self, rhs: &'rhs Solution) -> Solution {
