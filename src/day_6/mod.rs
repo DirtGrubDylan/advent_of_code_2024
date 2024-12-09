@@ -18,7 +18,7 @@ fn part_1(guard: &Guard, map: &PatrolMap) -> usize {
 }
 
 fn part_2(guard: &Guard, map: &PatrolMap) -> usize {
-    unimplemented!()
+    guard.number_of_possible_loops_by_adding_one_object(map)
 }
 
 fn get_guard_and_map(input: &[String]) -> (Guard, PatrolMap) {
@@ -46,6 +46,6 @@ mod tests {
 
         let (guard, map) = get_guard_and_map(&input);
 
-        assert_eq!(part_2(&guard, &map), 41);
+        assert_eq!(part_2(&guard, &map), 6);
     }
 }

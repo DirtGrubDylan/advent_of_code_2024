@@ -6,7 +6,7 @@ const RIGHT: Point2d<i32> = Point2d { x: 1, y: 0 };
 const DOWN: Point2d<i32> = Point2d { x: 0, y: 1 };
 const LEFT: Point2d<i32> = Point2d { x: -1, y: 0 };
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone, Hash)]
 pub enum Direction {
     Up,
     Right,
@@ -15,26 +15,26 @@ pub enum Direction {
 }
 
 impl Direction {
-    fn as_offset(&self) -> Point2d<i32> {
+    fn as_offset(self) -> Point2d<i32> {
         match self {
-            &Direction::Up => UP,
-            &Direction::Right => RIGHT,
-            &Direction::Down => DOWN,
-            &Direction::Left => LEFT,
+            Direction::Up => UP,
+            Direction::Right => RIGHT,
+            Direction::Down => DOWN,
+            Direction::Left => LEFT,
         }
     }
 
-    fn turn_90_degrees_clockwise(&self) -> Self {
+    fn turn_90_degrees_clockwise(self) -> Self {
         match self {
-            &Direction::Up => Direction::Right,
-            &Direction::Right => Direction::Down,
-            &Direction::Down => Direction::Left,
-            &Direction::Left => Direction::Up,
+            Direction::Up => Direction::Right,
+            Direction::Right => Direction::Down,
+            Direction::Down => Direction::Left,
+            Direction::Left => Direction::Up,
         }
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct Guard {
     current_position: Point2d<i32>,
     direction_facing: Direction,
@@ -42,17 +42,91 @@ pub struct Guard {
 
 impl Guard {
     fn new(col: i32, row: i32) -> Self {
-        let current_position = Point2d::new(col, row);
-        let direction_facing = Direction::Up;
+        Self::new_with_direction(col, row, Direction::Up)
+    }
 
+    fn new_with_direction(col: i32, row: i32, direction_facing: Direction) -> Self {
         Guard {
-            current_position,
+            current_position: Point2d::new(col, row),
             direction_facing,
         }
     }
 
     pub fn number_of_unique_positions_to_walk(&self, map: &PatrolMap) -> usize {
         self.unique_positions_to_walk(map).len()
+    }
+
+    pub fn number_of_possible_loops_by_adding_one_object(&self, map: &PatrolMap) -> usize {
+        self.possible_loops_by_adding_one_object_points(map).len()
+    }
+
+    pub fn possible_loops_by_adding_one_object_points(
+        &self,
+        map: &PatrolMap,
+    ) -> HashSet<Point2d<i32>> {
+        let mut result = HashSet::new();
+        let mut clone = self.clone();
+        let mut turn_snapshots = HashSet::from([clone.clone()]);
+        let mut map_clone = map.clone();
+
+        while let Some(obstacle_point) = map_clone.first_obstacle_facing(&clone) {
+            let point_before_obstacle = clone.point_just_before(obstacle_point);
+
+            clone
+                .positions_needed_to_walk_to(point_before_obstacle)
+                .into_iter()
+                .filter(|point| {
+                    let added = map_clone.add_obstacle(*point + clone.direction_facing.as_offset());
+
+                    let mut temp = clone.clone();
+
+                    temp.current_position = *point;
+                    temp.direction_facing = clone.direction_facing.turn_90_degrevaluees_clockwise();
+
+                    let result = temp.will_loop(&map_clone, &turn_snapshots);
+
+                    if added {
+                        map_clone.remove_obstacle(*point + clone.direction_facing.as_offset());
+                    }
+
+                    result
+                })
+                .for_each(|point| {
+                    result.insert(point + clone.direction_facing.as_offset());
+                });
+
+            clone.current_position = point_before_obstacle;
+            clone.direction_facing = clone.direction_facing.turn_90_degrees_clockwise();
+
+            turn_snapshots.insert(clone.clone());
+        }
+
+        let nearest_edge = map_clone.nearest_map_edge_point_facing(&clone);
+
+        clone
+            .positions_needed_to_walk_to(nearest_edge)
+            .into_iter()
+            .filter(|point| {
+                let added = map_clone.add_obstacle(*point + clone.direction_facing.as_offset());
+
+                let mut temp = clone.clone();
+
+                temp.current_position = *point;
+                temp.direction_facing = clone.direction_facing.turn_90_degrees_clockwise();
+
+                let result = temp.will_loop(&map_clone, &turn_snapshots);
+
+                if added {
+                    map_clone.remove_obstacle(*point + clone.direction_facing.as_offset());
+                }
+
+                result
+            })
+            .for_each(|point| {
+                result.insert(point + clone.direction_facing.as_offset());
+            });
+
+        result
     }
 
     pub fn unique_positions_to_walk(&self, map: &PatrolMap) -> HashSet<Point2d<i32>> {
@@ -76,6 +150,29 @@ impl Guard {
         positions_visited
     }
 
+    fn will_loop(&self, map: &PatrolMap, turn_snapshots: &HashSet<Self>) -> bool {
+        let mut result = false;
+        let mut clone = self.clone();
+        let mut new_snapshots = turn_snapshots.clone();
+
+        new_snapshots.insert(clone.clone());
+
+        while let Some(obstacle_point) = map.first_obstacle_facing(&clone) {
+            let point_before_obstacle = clone.point_just_before(obstacle_point);
+
+            clone.current_position = point_before_obstacle;
+            clone.direction_facing = clone.direction_facing.turn_90_degrees_clockwise();
+
+            if !new_snapshots.insert(clone.clone()) {
+                result = true;
+
+                break;
+            }
+        }
+
+        result
+    }
+
     fn positions_needed_to_walk_to(&self, dest: Point2d<i32>) -> HashSet<Point2d<i32>> {
         let mut result = HashSet::new();
         let mut current = self.current_position;
@@ -95,28 +192,16 @@ impl Guard {
 
         match self.direction_facing {
             Direction::Up if (dest.x != current.x) || (current.y < dest.y) => {
-                panic!(
-                    "Destination {:?} cannot be reached going up from {:?}",
-                    dest, current
-                )
+                panic!("Destination {dest:?} cannot be reached going up from {current:?}")
             }
             Direction::Right if (dest.y != current.y) || (dest.x < current.x) => {
-                panic!(
-                    "Destination {:?} cannot be reached going right from {:?}",
-                    dest, current
-                )
+                panic!("Destination {dest:?} cannot be reached going right from {current:?}")
             }
             Direction::Down if (dest.x != current.x) || (dest.y < current.y) => {
-                panic!(
-                    "Destination {:?} cannot be reached going down from {:?}",
-                    dest, current
-                )
+                panic!("Destination {dest:?} cannot be reached going down from {current:?}")
             }
             Direction::Left if (dest.y != current.y) || (current.x < dest.x) => {
-                panic!(
-                    "Destination {:?} cannot be reached going left from {:?}",
-                    dest, current
-                )
+                panic!("Destination {dest:?} cannot be reached going left from {current:?}")
             }
             _ => {}
         }
@@ -148,7 +233,7 @@ impl From<char> for MapObject {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct PatrolMap {
     data: HashMap<Point2d<i32>, MapObject>,
     raw_data: Vec<String>,
@@ -181,6 +266,51 @@ impl PatrolMap {
             .unwrap()
     }
 
+    pub fn add_obstacle(&mut self, point: Point2d<i32>) -> bool {
+        let (col, row) = (
+            usize::try_from(point.x).unwrap(),
+            usize::try_from(point.y).unwrap(),
+        );
+
+        let item = self.data.get(&point).copied();
+
+        match item {
+            Some(MapObject::Empty) => {
+                self.data.insert(point, MapObject::Obstacle);
+
+                if let Some(line) = self.raw_data.get_mut(row) {
+                    line.replace_range(col..=col, "O");
+                }
+
+                true
+            }
+            _ => false,
+        }
+    }
+
+    pub fn remove_obstacle(&mut self, point: Point2d<i32>) -> bool {
+        let (col, row) = (
+            usize::try_from(point.x).unwrap(),
+            usize::try_from(point.y).unwrap(),
+        );
+
+        let item = self.data.get(&point).copied();
+
+        match item {
+            Some(object) if object != MapObject::GuardStartingPosition => {
+                self.data.insert(point, MapObject::Empty);
+
+                if let Some(line) = self.raw_data.get_mut(row) {
+                    line.replace_range(col..=col, ".");
+                }
+
+                true
+            }
+            _ => false,
+        }
+    }
+
+    #[allow(dead_code)]
     pub fn print_with_walked_positions(&self, walked_positions: &HashSet<Point2d<i32>>) {
         let mut data_to_print = self.raw_data.clone();
 
@@ -209,7 +339,7 @@ impl PatrolMap {
         let mut previous_point = guard.current_position;
         let mut current_point = guard.current_position;
 
-        while let Some(object) = self.data.get(&current_point) {
+        while self.data.contains_key(&current_point) {
             previous_point = current_point;
             current_point = current_point + guard.direction_facing.as_offset();
         }
@@ -295,6 +425,97 @@ mod tests {
         ]);
 
         let result = guard.positions_needed_to_walk_to(Point2d::new(4, 1));
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_guard_will_loop_true() {
+        let input = [
+            String::from("....#....."),
+            String::from(".........#"),
+            String::from(".........."),
+            String::from("..#......."),
+            String::from(".......#.."),
+            String::from(".........."),
+            String::from(".#..^....."),
+            String::from("........#."),
+            String::from("#........."),
+            String::from("......#..."),
+        ];
+
+        let map = PatrolMap::new(&input);
+        let guard = Guard::new_with_direction(6, 6, Direction::Left);
+
+        let turn_snapshots = HashSet::from([
+            Guard::new_with_direction(4, 6, Direction::Up),
+            Guard::new_with_direction(4, 1, Direction::Right),
+            Guard::new_with_direction(8, 1, Direction::Down),
+            Guard::new_with_direction(8, 6, Direction::Left),
+            Guard::new_with_direction(2, 6, Direction::Up),
+            Guard::new_with_direction(2, 4, Direction::Right),
+            Guard::new_with_direction(6, 4, Direction::Down),
+        ]);
+
+        assert!(guard.will_loop(&map, &turn_snapshots));
+    }
+
+    #[test]
+    fn test_guard_will_loop_false() {
+        let input = [
+            String::from("....#....."),
+            String::from(".........#"),
+            String::from(".........."),
+            String::from("..#......."),
+            String::from(".......#.."),
+            String::from(".........."),
+            String::from(".#..^....."),
+            String::from("........#."),
+            String::from("#........."),
+            String::from("......#..."),
+        ];
+
+        let map = PatrolMap::new(&input);
+        let guard = Guard::new_with_direction(6, 6, Direction::Up);
+
+        let turn_snapshots = HashSet::from([
+            Guard::new_with_direction(4, 6, Direction::Up),
+            Guard::new_with_direction(4, 1, Direction::Right),
+            Guard::new_with_direction(8, 1, Direction::Down),
+            Guard::new_with_direction(8, 6, Direction::Left),
+        ]);
+
+        assert!(!guard.will_loop(&map, &turn_snapshots));
+    }
+
+    #[test]
+    fn test_possible_loops_by_adding_one_object_points() {
+        let input = [
+            String::from("....#....."),
+            String::from(".........#"),
+            String::from(".........."),
+            String::from("..#......."),
+            String::from(".......#.."),
+            String::from(".........."),
+            String::from(".#..^....."),
+            String::from("........#."),
+            String::from("#........."),
+            String::from("......#..."),
+        ];
+
+        let map = PatrolMap::new(&input);
+        let guard = map.guard();
+
+        let expected = HashSet::from([
+            Point2d::new(3, 6),
+            Point2d::new(6, 7),
+            Point2d::new(7, 7),
+            Point2d::new(1, 8),
+            Point2d::new(3, 8),
+            Point2d::new(7, 9),
+        ]);
+
+        let result = guard.possible_loops_by_adding_one_object_points(&map);
 
         assert_eq!(result, expected);
     }
