@@ -62,14 +62,6 @@ where
     pub fn new(x: T, y: T) -> Point2d<T> {
         Point2d { x, y }
     }
-
-    #[must_use]
-    pub fn add_t(&self, other: (T, T)) -> Point2d<T> {
-        Point2d {
-            x: self.x + other.0,
-            y: self.y + other.1,
-        }
-    }
 }
 
 impl<T> Location for Point2d<T>
@@ -98,13 +90,6 @@ where
         let temp = (relative_x * relative_x + relative_y * relative_y).into();
 
         temp.sqrt()
-    }
-
-    fn add(&self, other: &Point2d<T>) -> Point2d<T> {
-        let new_x = self.x + other.x;
-        let new_y = self.y + other.y;
-
-        Point2d::new(new_x, new_y)
     }
 }
 
@@ -146,29 +131,6 @@ mod tests {
         let result = ORIGIN_POINT.distance_to(&point);
 
         assert!((result - expected).abs() < EPSILON);
-    }
-
-    #[test]
-    fn test_add() {
-        let first = Point2d::new(3, 4);
-        let second = Point2d::new(5, -1);
-
-        let expected = Point2d::new(8, 3);
-
-        let result = first.add(second);
-
-        assert_eq!(result, expected);
-    }
-
-    #[test]
-    fn test_add_tuple() {
-        let first = Point2d::new(3, 4);
-
-        let expected = Point2d::new(8, 3);
-
-        let result = first.add_t((5, -1));
-
-        assert_eq!(result, expected);
     }
 
     #[test]
