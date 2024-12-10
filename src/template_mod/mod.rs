@@ -24,7 +24,7 @@ mod tests {
     fn test_part_1() {
         let input = to_string_vector("test_inputs/day_7.txt").unwrap();
 
-        assert_eq!(part_2(&input), 666);
+        assert_eq!(part_1(&input), 666);
     }
 
     #[test]
