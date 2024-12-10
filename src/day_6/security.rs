@@ -143,7 +143,7 @@ impl Guard {
         let mut current = self.current_position;
 
         while current != dest {
-            current = current + self.direction_facing.as_offset();
+            current += self.direction_facing.as_offset();
 
             result.push(current);
         }
@@ -173,7 +173,7 @@ impl Guard {
 
         while current != dest {
             previous = current;
-            current = current + self.direction_facing.as_offset();
+            current += self.direction_facing.as_offset();
         }
 
         previous
@@ -306,7 +306,7 @@ impl PatrolMap {
 
         while self.data.contains_key(&current_point) {
             previous_point = current_point;
-            current_point = current_point + guard.direction_facing.as_offset();
+            current_point += guard.direction_facing.as_offset();
         }
 
         previous_point

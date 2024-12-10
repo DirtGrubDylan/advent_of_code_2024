@@ -1,9 +1,9 @@
 use std::mem;
-use std::ops::{Div, Mul, Rem};
+use std::ops::{Div, Mul, Neg, Rem};
 
 pub fn gcd<T>(first: T, second: T) -> T
 where
-    T: Rem<Output = T> + PartialEq + Eq + Ord + Copy + From<u8>,
+    T: Rem<Output = T> + Neg<Output = T> + PartialEq + Eq + Ord + Copy + From<u8>,
 {
     let mut max = first;
     let mut min = second;
@@ -23,12 +23,24 @@ where
         min = res;
     }
 
-    min
+    if min < T::from(0) {
+        -min
+    } else {
+        min
+    }
 }
 
 pub fn lcm<T>(first: T, second: T) -> T
 where
-    T: Mul<Output = T> + Div<Output = T> + Rem<Output = T> + PartialEq + Eq + Ord + Copy + From<u8>,
+    T: Mul<Output = T>
+        + Div<Output = T>
+        + Rem<Output = T>
+        + Neg<Output = T>
+        + PartialEq
+        + Eq
+        + Ord
+        + Copy
+        + From<u8>,
 {
     first * (second / gcd(first, second))
 }
@@ -97,9 +109,9 @@ mod tests {
 
     #[test]
     fn test_gcd_not_1() {
-        let expected = 5;
+        let expected = 3;
 
-        let result = gcd(15, 20);
+        let result = gcd(-3, 6);
 
         assert_eq!(result, expected);
     }

@@ -1,6 +1,7 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
 
 use super::location::Location;
+use super::math;
 
 #[derive(Debug, Eq, PartialEq, PartialOrd, Hash, Copy, Clone, Ord)]
 pub struct Point2d<T>
@@ -16,10 +17,40 @@ where
         + Neg<Output = T>
         + Ord
         + Into<f64>
+        + From<u8>
         + Copy,
 {
     pub x: T,
     pub y: T,
+}
+
+impl<T> Point2d<T>
+where
+    T: Add<Output = T>
+        + AddAssign
+        + Sub<Output = T>
+        + SubAssign
+        + Mul<Output = T>
+        + MulAssign
+        + Div<Output = T>
+        + DivAssign
+        + Neg<Output = T>
+        + Rem<Output = T>
+        + Ord
+        + Into<f64>
+        + From<u8>
+        + Copy,
+{
+    pub fn new(x: T, y: T) -> Self {
+        Point2d { x, y }
+    }
+
+    #[must_use]
+    pub fn reduce(&self) -> Self {
+        let gcd = math::gcd(self.x, self.y);
+
+        Point2d::new(self.x / gcd, self.y / gcd)
+    }
 }
 
 impl<T> Add<Point2d<T>> for Point2d<T>
@@ -33,8 +64,10 @@ where
         + Div<Output = T>
         + DivAssign
         + Neg<Output = T>
+        + Rem<Output = T>
         + Ord
         + Into<f64>
+        + From<u8>
         + Copy,
 {
     type Output = Self;
@@ -55,13 +88,15 @@ where
         + Div<Output = T>
         + DivAssign<T>
         + Neg<Output = T>
+        + Rem<Output = T>
         + Ord
         + Into<f64>
+        + From<u8>
         + Copy,
 {
     fn add_assign(&mut self, rhs: Self) {
         self.x += rhs.x;
-        self.y += rhs.x;
+        self.y += rhs.y;
     }
 }
 
@@ -76,8 +111,10 @@ where
         + Div<Output = T>
         + DivAssign
         + Neg<Output = T>
+        + Rem<Output = T>
         + Ord
         + Into<f64>
+        + From<u8>
         + Copy,
 {
     type Output = Self;
@@ -98,13 +135,15 @@ where
         + Div<Output = T>
         + DivAssign<T>
         + Neg<Output = T>
+        + Rem<Output = T>
         + Ord
         + Into<f64>
+        + From<u8>
         + Copy,
 {
     fn sub_assign(&mut self, rhs: Self) {
         self.x -= rhs.x;
-        self.y -= rhs.x;
+        self.y -= rhs.y;
     }
 }
 
@@ -119,8 +158,10 @@ where
         + Div<Output = T>
         + DivAssign
         + Neg<Output = T>
+        + Rem<Output = T>
         + Ord
         + Into<f64>
+        + From<u8>
         + Copy,
 {
     type Output = Self;
@@ -141,13 +182,15 @@ where
         + Div<Output = T>
         + DivAssign<T>
         + Neg<Output = T>
+        + Rem<Output = T>
         + Ord
         + Into<f64>
+        + From<u8>
         + Copy,
 {
     fn mul_assign(&mut self, rhs: Self) {
         self.x *= rhs.x;
-        self.y *= rhs.x;
+        self.y *= rhs.y;
     }
 }
 
@@ -162,8 +205,10 @@ where
         + Div<Output = T>
         + DivAssign
         + Neg<Output = T>
+        + Rem<Output = T>
         + Ord
         + Into<f64>
+        + From<u8>
         + Copy,
 {
     type Output = Self;
@@ -184,13 +229,15 @@ where
         + Div<Output = T>
         + DivAssign<T>
         + Neg<Output = T>
+        + Rem<Output = T>
         + Ord
         + Into<f64>
+        + From<u8>
         + Copy,
 {
     fn div_assign(&mut self, rhs: Self) {
         self.x /= rhs.x;
-        self.y /= rhs.x;
+        self.y /= rhs.y;
     }
 }
 
@@ -205,8 +252,10 @@ where
         + Div<Output = T>
         + DivAssign<T>
         + Neg<Output = T>
+        + Rem<Output = T>
         + Ord
         + Into<f64>
+        + From<u8>
         + Copy,
 {
     type Output = Self;
@@ -227,31 +276,13 @@ where
         + Div<Output = T>
         + DivAssign
         + Neg<Output = T>
+        + Rem<Output = T>
         + Ord
         + Into<f64>
+        + From<u8>
         + Copy,
 {
     fn from((x, y): (T, T)) -> Point2d<T> {
-        Point2d { x, y }
-    }
-}
-
-impl<T> Point2d<T>
-where
-    T: Add<Output = T>
-        + AddAssign
-        + Sub<Output = T>
-        + SubAssign
-        + Mul<Output = T>
-        + MulAssign
-        + Div<Output = T>
-        + DivAssign
-        + Neg<Output = T>
-        + Ord
-        + Into<f64>
-        + Copy,
-{
-    pub fn new(x: T, y: T) -> Self {
         Point2d { x, y }
     }
 }
@@ -267,8 +298,10 @@ where
         + Div<Output = T>
         + DivAssign
         + Neg<Output = T>
+        + Rem<Output = T>
         + Ord
         + Into<f64>
+        + From<u8>
         + Copy,
 {
     type ValueOutput = T;
@@ -342,5 +375,20 @@ mod tests {
         map.entry(second).and_modify(|x| *x += 1).or_insert(-666);
 
         assert_eq!(*map.get(&second).unwrap(), 2);
+    }
+
+    #[test]
+    fn test_reduce() {
+        let point_1 = Point2d::new(-3, 6);
+        let point_2 = Point2d::new(3, -5);
+
+        let expected_1 = Point2d::new(-1, 2);
+        let expected_2 = Point2d::new(3, -5);
+
+        let result_1 = point_1.reduce();
+        let result_2 = point_2.reduce();
+
+        assert_eq!(result_1, expected_1);
+        assert_eq!(result_2, expected_2);
     }
 }

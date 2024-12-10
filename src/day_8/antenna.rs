@@ -36,7 +36,7 @@ impl Antinode {
     ) -> Vec<Point2d<i32>> {
         let mut result = Vec::new();
         let mut current_position = first.position;
-        let slope = second.position - first.position;
+        let slope = (second.position - first.position).reduce();
 
         let mut has_valid_x = 0 <= current_position.x && current_position.x <= max.x;
         let mut has_valid_y = 0 <= current_position.y && current_position.y <= max.y;
@@ -49,6 +49,7 @@ impl Antinode {
         }
 
         current_position += slope;
+
         has_valid_x = 0 <= current_position.x && current_position.x <= max.x;
         has_valid_y = 0 <= current_position.y && current_position.y <= max.y;
 
@@ -80,12 +81,13 @@ impl From<Antenna> for Antinode {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct AntennaMap {
+pub struct Map {
     data: HashMap<Point2d<i32>, Location>,
     raw_data: Vec<Vec<char>>,
 }
 
-impl AntennaMap {
+impl Map {
+    #[allow(dead_code)]
     pub fn print(&self) {
         self.raw_data
             .iter()
@@ -100,8 +102,8 @@ impl AntennaMap {
             .count()
     }
 
-    pub fn populate_antinodes(&mut self) {
-        for (position, antinode) in self.find_antinodes() {
+    pub fn populate_antinodes(&mut self, use_extended: bool) {
+        for (position, antinode) in self.find_antinodes(use_extended) {
             if !self.data.contains_key(&position) {
                 continue;
             }
@@ -110,15 +112,19 @@ impl AntennaMap {
                 location.add_antinode(antinode);
             });
 
-            self.raw_data
+            let element = self
+                .raw_data
                 .get_mut(usize::try_from(position.y).unwrap())
                 .and_then(|row| row.get_mut(usize::try_from(position.x).unwrap()))
-                .filter(|element| **element == '.')
-                .map(|element| *element = '#');
+                .filter(|element| **element == '.');
+
+            if let Some(data) = element {
+                *data = '#';
+            }
         }
     }
 
-    fn find_antinodes(&self) -> Vec<(Point2d<i32>, Antinode)> {
+    fn find_antinodes(&self, use_extended: bool) -> Vec<(Point2d<i32>, Antinode)> {
         let mut result = Vec::new();
 
         for (frequency, locations) in self.frequency_to_locations() {
@@ -130,11 +136,23 @@ impl AntennaMap {
                 for second_location in locations.iter().skip(index + 1) {
                     let antinode = Antinode::from(frequency);
 
-                    let (first_antinode_position, second_antinode_position) =
-                        Antinode::position_from(&first_location, &second_location);
+                    if use_extended {
+                        let antinode_locations = Antinode::position_from_extended(
+                            first_location,
+                            second_location,
+                            self.max_point(),
+                        );
 
-                    result.push((first_antinode_position, antinode));
-                    result.push((second_antinode_position, antinode));
+                        for antinode_location in antinode_locations {
+                            result.push((antinode_location, antinode));
+                        }
+                    } else {
+                        let (first_antinode_position, second_antinode_position) =
+                            Antinode::position_from(first_location, second_location);
+
+                        result.push((first_antinode_position, antinode));
+                        result.push((second_antinode_position, antinode));
+                    }
                 }
             }
         }
@@ -145,20 +163,27 @@ impl AntennaMap {
     fn frequency_to_locations(&self) -> HashMap<char, Vec<&Location>> {
         let mut result = HashMap::new();
 
-        for (_, location) in &self.data {
-            let frequency = location
-                .antenna
-                .map(|antenna| antenna.frequency)
-                .unwrap_or('.');
+        for location in self.data.values() {
+            let frequency = location.antenna.map_or('.', |antenna| antenna.frequency);
 
             result.entry(frequency).or_insert(Vec::new()).push(location);
         }
 
         result
     }
+
+    fn max_point(&self) -> Point2d<i32> {
+        let max_row = self.raw_data.len();
+        let max_col = self.raw_data.first().map_or(0, Vec::len);
+
+        Point2d::new(
+            i32::try_from(max_row).unwrap(),
+            i32::try_from(max_col).unwrap(),
+        )
+    }
 }
 
-impl<'a> From<&'a [String]> for AntennaMap {
+impl<'a> From<&'a [String]> for Map {
     fn from(input: &'a [String]) -> Self {
         let raw_data = input.iter().map(|line| line.chars().collect()).collect();
 
@@ -173,13 +198,13 @@ impl<'a> From<&'a [String]> for AntennaMap {
             }
         }
 
-        AntennaMap { data, raw_data }
+        Map { data, raw_data }
     }
 }
 
-impl From<&Vec<String>> for AntennaMap {
+impl From<&Vec<String>> for Map {
     fn from(input: &Vec<String>) -> Self {
-        AntennaMap::from(input.as_slice())
+        Map::from(input.as_slice())
     }
 }
 
@@ -275,13 +300,13 @@ mod tests {
             (Point2d::new(2, 2), Location::new(2, 2, '.')),
         ]);
 
-        let result_data = AntennaMap::from(&input).data;
+        let result_data = Map::from(&input).data;
 
         assert_eq!(result_data, expected_data);
     }
 
     #[test]
-    fn test_antenna_map_find_antinodes() {
+    fn test_antenna_map_find_antinodes_not_extended() {
         let input = vec![
             String::from(".........."),
             String::from(".........."),
@@ -295,7 +320,7 @@ mod tests {
             String::from(".........."),
         ];
 
-        let map = AntennaMap::from(&input);
+        let map = Map::from(&input);
 
         let expected = vec![
             (Point2d::new(3, 1), Antinode::from('a')),
@@ -306,7 +331,48 @@ mod tests {
             (Point2d::new(12, 5), Antinode::from('a')),
         ];
 
-        let result = map.find_antinodes();
+        let result = map.find_antinodes(/*use_extended=*/ false);
+
+        assert_eq!(result.len(), expected.len());
+
+        for expected_element in expected {
+            assert!(result.contains(&expected_element));
+        }
+    }
+
+    #[test]
+    fn test_antenna_map_find_antinodes_extended() {
+        // a1 = (3, 2)
+        // a2 = (5, 6)
+        // a2 - a1 = (2, 4) = (1, 2)
+        let input = vec![
+            String::from(".........."),
+            String::from(".........."),
+            String::from("...a......"),
+            String::from(".........."),
+            String::from(".........."),
+            String::from(".........."),
+            String::from(".....a...."),
+            String::from(".........."),
+            String::from("......A..."),
+            String::from(".........."),
+            String::from(".........."),
+        ];
+
+        let map = Map::from(&input);
+
+        let expected = vec![
+            (Point2d::new(2, 0), Antinode::from('a')),
+            (Point2d::new(3, 2), Antinode::from('a')),
+            (Point2d::new(4, 4), Antinode::from('a')),
+            (Point2d::new(5, 6), Antinode::from('a')),
+            (Point2d::new(6, 8), Antinode::from('a')),
+            (Point2d::new(7, 10), Antinode::from('a')),
+        ];
+
+        let result = map.find_antinodes(/*use_extended=*/ true);
+
+        println!("{result:?}");
 
         assert_eq!(result.len(), expected.len());
 
@@ -323,7 +389,7 @@ mod tests {
             String::from("..."),
         ];
 
-        let map = AntennaMap::from(&input);
+        let map = Map::from(&input);
 
         let location_0 = Location::new(0, 0, '.');
         let location_1 = Location::new(1, 0, '.');
