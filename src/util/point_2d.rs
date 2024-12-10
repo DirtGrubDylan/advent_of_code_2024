@@ -1,4 +1,4 @@
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use super::location::Location;
 
@@ -6,9 +6,14 @@ use super::location::Location;
 pub struct Point2d<T>
 where
     T: Add<Output = T>
+        + AddAssign
         + Sub<Output = T>
+        + SubAssign
         + Mul<Output = T>
+        + MulAssign
         + Div<Output = T>
+        + DivAssign
+        + Neg<Output = T>
         + Ord
         + Into<f64>
         + Copy,
@@ -20,26 +25,208 @@ where
 impl<T> Add<Point2d<T>> for Point2d<T>
 where
     T: Add<Output = T>
+        + AddAssign
         + Sub<Output = T>
+        + SubAssign
         + Mul<Output = T>
+        + MulAssign
         + Div<Output = T>
+        + DivAssign
+        + Neg<Output = T>
         + Ord
         + Into<f64>
         + Copy,
 {
-    type Output = Point2d<T>;
+    type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
         Point2d::new(self.x + rhs.x, self.y + rhs.y)
     }
 }
 
+impl<T> AddAssign<Point2d<T>> for Point2d<T>
+where
+    T: Add<Output = T>
+        + AddAssign<T>
+        + Sub<Output = T>
+        + SubAssign<T>
+        + Mul<Output = T>
+        + MulAssign<T>
+        + Div<Output = T>
+        + DivAssign<T>
+        + Neg<Output = T>
+        + Ord
+        + Into<f64>
+        + Copy,
+{
+    fn add_assign(&mut self, rhs: Self) {
+        self.x += rhs.x;
+        self.y += rhs.x;
+    }
+}
+
+impl<T> Sub<Point2d<T>> for Point2d<T>
+where
+    T: Add<Output = T>
+        + AddAssign
+        + Sub<Output = T>
+        + SubAssign
+        + Mul<Output = T>
+        + MulAssign
+        + Div<Output = T>
+        + DivAssign
+        + Neg<Output = T>
+        + Ord
+        + Into<f64>
+        + Copy,
+{
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Point2d::new(self.x - rhs.x, self.y - rhs.y)
+    }
+}
+
+impl<T> SubAssign<Point2d<T>> for Point2d<T>
+where
+    T: Add<Output = T>
+        + AddAssign<T>
+        + Sub<Output = T>
+        + SubAssign<T>
+        + Mul<Output = T>
+        + MulAssign<T>
+        + Div<Output = T>
+        + DivAssign<T>
+        + Neg<Output = T>
+        + Ord
+        + Into<f64>
+        + Copy,
+{
+    fn sub_assign(&mut self, rhs: Self) {
+        self.x -= rhs.x;
+        self.y -= rhs.x;
+    }
+}
+
+impl<T> Mul<Point2d<T>> for Point2d<T>
+where
+    T: Add<Output = T>
+        + AddAssign
+        + Sub<Output = T>
+        + SubAssign
+        + Mul<Output = T>
+        + MulAssign
+        + Div<Output = T>
+        + DivAssign
+        + Neg<Output = T>
+        + Ord
+        + Into<f64>
+        + Copy,
+{
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Point2d::new(self.x * rhs.x, self.y * rhs.y)
+    }
+}
+
+impl<T> MulAssign<Point2d<T>> for Point2d<T>
+where
+    T: Add<Output = T>
+        + AddAssign<T>
+        + Sub<Output = T>
+        + SubAssign<T>
+        + Mul<Output = T>
+        + MulAssign<T>
+        + Div<Output = T>
+        + DivAssign<T>
+        + Neg<Output = T>
+        + Ord
+        + Into<f64>
+        + Copy,
+{
+    fn mul_assign(&mut self, rhs: Self) {
+        self.x *= rhs.x;
+        self.y *= rhs.x;
+    }
+}
+
+impl<T> Div<Point2d<T>> for Point2d<T>
+where
+    T: Add<Output = T>
+        + AddAssign
+        + Sub<Output = T>
+        + SubAssign
+        + Mul<Output = T>
+        + MulAssign
+        + Div<Output = T>
+        + DivAssign
+        + Neg<Output = T>
+        + Ord
+        + Into<f64>
+        + Copy,
+{
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        Point2d::new(self.x / rhs.x, self.y / rhs.y)
+    }
+}
+
+impl<T> DivAssign<Point2d<T>> for Point2d<T>
+where
+    T: Add<Output = T>
+        + AddAssign<T>
+        + Sub<Output = T>
+        + SubAssign<T>
+        + Mul<Output = T>
+        + MulAssign<T>
+        + Div<Output = T>
+        + DivAssign<T>
+        + Neg<Output = T>
+        + Ord
+        + Into<f64>
+        + Copy,
+{
+    fn div_assign(&mut self, rhs: Self) {
+        self.x /= rhs.x;
+        self.y /= rhs.x;
+    }
+}
+
+impl<T> Neg for Point2d<T>
+where
+    T: Add<Output = T>
+        + AddAssign<T>
+        + Sub<Output = T>
+        + SubAssign<T>
+        + Mul<Output = T>
+        + MulAssign<T>
+        + Div<Output = T>
+        + DivAssign<T>
+        + Neg<Output = T>
+        + Ord
+        + Into<f64>
+        + Copy,
+{
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Point2d::new(-self.x, -self.y)
+    }
+}
+
 impl<T> From<(T, T)> for Point2d<T>
 where
     T: Add<Output = T>
+        + AddAssign
         + Sub<Output = T>
+        + SubAssign
         + Mul<Output = T>
+        + MulAssign
         + Div<Output = T>
+        + DivAssign
+        + Neg<Output = T>
         + Ord
         + Into<f64>
         + Copy,
@@ -52,14 +239,19 @@ where
 impl<T> Point2d<T>
 where
     T: Add<Output = T>
+        + AddAssign
         + Sub<Output = T>
+        + SubAssign
         + Mul<Output = T>
+        + MulAssign
         + Div<Output = T>
+        + DivAssign
+        + Neg<Output = T>
         + Ord
         + Into<f64>
         + Copy,
 {
-    pub fn new(x: T, y: T) -> Point2d<T> {
+    pub fn new(x: T, y: T) -> Self {
         Point2d { x, y }
     }
 }
@@ -67,9 +259,14 @@ where
 impl<T> Location for Point2d<T>
 where
     T: Add<Output = T>
+        + AddAssign
         + Sub<Output = T>
+        + SubAssign
         + Mul<Output = T>
+        + MulAssign
         + Div<Output = T>
+        + DivAssign
+        + Neg<Output = T>
         + Ord
         + Into<f64>
         + Copy,
