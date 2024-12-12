@@ -17,13 +17,20 @@ fn part_1(input: &[String]) -> usize {
         .map(|line| line.parse().expect("Can't parse line"))
         .unwrap();
 
-    let compacted_raw_data = diskmap.compacted_raw_data();
+    let compacted_raw_data = diskmap.compacted_data_single_length();
 
     DiskMap::checksum(&compacted_raw_data)
 }
 
-fn part_2(_input: &[String]) -> usize {
-    unimplemented!()
+fn part_2(input: &[String]) -> usize {
+    let diskmap: DiskMap = input
+        .first()
+        .map(|line| line.parse().expect("Can't parse line"))
+        .unwrap();
+
+    let compacted_raw_data = diskmap.compacted_data();
+
+    DiskMap::checksum(&compacted_raw_data)
 }
 
 #[cfg(test)]
@@ -38,7 +45,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not implemented")]
     fn test_part_2() {
         let input = to_string_vector("test_inputs/day_9.txt").unwrap();
 
