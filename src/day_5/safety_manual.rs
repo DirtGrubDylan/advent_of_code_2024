@@ -23,7 +23,7 @@ impl PageOrderingRules {
     pub fn pages_before_is_valid(&self, page_number: u32, pages_before: &HashSet<u32>) -> bool {
         self.rules
             .get(&page_number)
-            .map_or(true, |rule| !rule.contains_after_pages_in(pages_before))
+            .is_none_or(|rule| !rule.contains_after_pages_in(pages_before))
     }
 
     pub fn conflicting_pages(&self, page_number: u32, pages_before: &HashSet<u32>) -> HashSet<u32> {
