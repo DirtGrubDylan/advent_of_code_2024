@@ -57,19 +57,33 @@ impl Map {
     }
 
     fn number_of_peak_paths_from(&self, point: Point2d<i32>) -> u32 {
-        match self.heights.get(&point) {
-            None | Some(height) if height 
-        }
+        // match self.heights.get(&point) {
+        //     None | Some(height) if height
+        // }
 
         unimplemented!()
     }
 
-    fn number_of_peak_paths_from(&self, point: Point2d<i32>) -> u32 {
-        match self.heights.get(&point) {
-            None | Some(height) if height 
-        }
+    fn number_of_valid_paths_from(
+        &self,
+        current_point: Point2d<i32>,
+        next_point: Point2d<i32>,
+    ) -> u32 {
+        let current_height = self
+            .heights
+            .get(&current_point)
+            .expect(&format!("Map does not have {current_point:?}"));
 
-        unimplemented!()
+        match self.heights.get(&next_point) {
+            Some(9) => 1,
+            Some(next_height) if next_height == current_height + 1 => {
+                self.number_of_valid_paths_from(next_point, next_point + UP)
+                    + self.number_of_valid_paths_from(next_point, next_point + RIGHT)
+                    + self.number_of_valid_paths_from(next_point, next_point + DOWN)
+                    + self.number_of_valid_paths_from(next_point, next_point + LEFT)
+            }
+            _ => 0,
+        }
     }
 
     fn bases(&self) -> HashSet<Point2d<i32>> {
