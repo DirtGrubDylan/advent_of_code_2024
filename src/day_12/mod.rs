@@ -26,7 +26,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[should_panic(expected = "not implemented")]
     fn test_part_1() {
         let input = to_string_vector("test_inputs/day_12.txt").unwrap();
 

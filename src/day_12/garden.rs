@@ -24,9 +24,9 @@ pub struct Region {
 }
 
 impl Region {
-    fn new(input: char) -> Self {
+    fn new(plant: Plant) -> Self {
         Region {
-            plant: Plant::from(input),
+            plant,
             locations: HashSet::new(),
         }
     }
@@ -58,6 +58,10 @@ impl Region {
 
     fn price(&self) -> usize {
         self.area() * self.perimeter()
+    }
+
+    fn add_locations(&mut self, locations: &HashSet<Point2d<i32>>) {
+        self.locations.extend(locations);
     }
 
     fn add_location(&mut self, location: Point2d<i32>) -> bool {
@@ -97,7 +101,67 @@ impl Garden {
     }
 
     fn regions_from(map: &HashMap<Point2d<i32>, Plant>) -> Vec<Region> {
-        unimplemented!()
+        let mut result = Vec::new();
+
+        let mut seen = HashSet::new();
+
+        for (&start_point, &target) in map {
+            if seen.contains(&start_point) {
+                continue;
+            }
+
+            let mut region = Region::new(target);
+
+            region.add_locations(&Self::valid_neighbors_for(
+                start_point,
+                target,
+                &mut seen,
+                &map,
+            ));
+
+            result.push(region);
+        }
+
+        result
+    }
+
+    fn valid_neighbors_for(
+        location: Point2d<i32>,
+        target: Plant,
+        seen: &mut HashSet<Point2d<i32>>,
+        map: &HashMap<Point2d<i32>, Plant>,
+    ) -> HashSet<Point2d<i32>> {
+        let mut result = HashSet::new();
+
+        match map.get(&location) {
+            Some(&plant) if (plant == target) && !seen.contains(&location) => {
+                seen.insert(location);
+                result.insert(location);
+
+                result.extend(Self::valid_neighbors_for(location + UP, target, seen, map));
+                result.extend(Self::valid_neighbors_for(
+                    location + RIGHT,
+                    target,
+                    seen,
+                    map,
+                ));
+                result.extend(Self::valid_neighbors_for(
+                    location + DOWN,
+                    target,
+                    seen,
+                    map,
+                ));
+                result.extend(Self::valid_neighbors_for(
+                    location + LEFT,
+                    target,
+                    seen,
+                    map,
+                ));
+            }
+            _ => {}
+        }
+
+        result
     }
 }
 
@@ -173,7 +237,7 @@ mod tests {
         };
         let d_region = Region {
             plant: Plant::from('D'),
-            locations: HashSet::from([Point2d::new(3, 2)]),
+            locations: HashSet::from([Point2d::new(3, 1)]),
         };
 
         let expected = Garden {
@@ -185,7 +249,10 @@ mod tests {
         assert_eq!(result.regions.len(), expected.regions.len());
 
         for expected_region in expected.regions {
-            assert!(result.regions.contains(&expected_region));
+            assert!(
+                result.regions.contains(&expected_region),
+                "{expected_region:?}"
+            );
         }
     }
 
