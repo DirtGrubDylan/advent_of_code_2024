@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::hash::Hash;
 use std::str::FromStr;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
@@ -80,6 +81,21 @@ impl Arrangement {
         }
 
         counter
+    }
+
+    pub fn temp_iter(&self) -> HashMap<Stone, usize> {
+        let mut result = HashMap::new();
+
+        for (stone, &count) in &self.stone_counter() {
+            for new_stone in stone.apply_rules() {
+                result
+                    .entry(new_stone)
+                    .and_modify(|new_count| *new_count += count)
+                    .or_insert(count);
+            }
+        }
+
+        result
     }
 }
 

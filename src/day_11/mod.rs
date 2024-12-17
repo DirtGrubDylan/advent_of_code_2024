@@ -14,13 +14,19 @@ pub fn run() {
 fn part_1(input: &[String]) -> usize {
     let mut stones: Arrangement = input.first().map(|line| line.parse().unwrap()).unwrap();
 
-    stones.nth(25);
+    println!("{:?}", stones.temp_iter());
 
-    println!("{:?}", stones.stone_counter());
-    println!(
-        "{:?}",
-        stones.stone_counter().iter().max_by_key(|(_, v)| **v)
-    );
+    stones.nth(2);
+
+    println!("{:?}", stones.temp_iter());
+
+    stones.nth(24);
+
+    // println!("{:?}", stones.stone_counter());
+    // println!(
+    //     "{:?}",
+    //     stones.stone_counter().iter().max_by_key(|(_, v)| **v)
+    // );
 
     stones.number_of_stones()
 }
