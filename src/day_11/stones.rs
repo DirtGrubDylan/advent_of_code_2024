@@ -62,40 +62,12 @@ impl Display for Stone {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Arrangement {
-    stones: Vec<Stone>,
+    stones: HashMap<Stone, usize>,
 }
 
 impl Arrangement {
     pub fn number_of_stones(&self) -> usize {
-        self.stones.len()
-    }
-
-    pub fn stone_counter(&self) -> HashMap<Stone, usize> {
-        let mut counter = HashMap::new();
-
-        for stone in &self.stones {
-            counter
-                .entry(*stone)
-                .and_modify(|count| *count += 1)
-                .or_insert(1);
-        }
-
-        counter
-    }
-
-    pub fn temp_iter(&self) -> HashMap<Stone, usize> {
-        let mut result = HashMap::new();
-
-        for (stone, &count) in &self.stone_counter() {
-            for new_stone in stone.apply_rules() {
-                result
-                    .entry(new_stone)
-                    .and_modify(|new_count| *new_count += count)
-                    .or_insert(count);
-            }
-        }
-
-        result
+        self.stones.values().sum()
     }
 }
 
@@ -103,13 +75,20 @@ impl Iterator for Arrangement {
     type Item = Arrangement;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let new_arrangement = Arrangement {
-            stones: self.stones.iter().flat_map(Stone::apply_rules).collect(),
-        };
+        let mut new_stones = HashMap::new();
 
-        self.stones = new_arrangement.clone().stones;
+        for (stone, &count) in &self.stones {
+            for new_stone in stone.apply_rules() {
+                new_stones
+                    .entry(new_stone)
+                    .and_modify(|new_count| *new_count += count)
+                    .or_insert(count);
+            }
+        }
 
-        Some(new_arrangement)
+        self.stones = new_stones.clone();
+
+        Some(Arrangement { stones: new_stones })
     }
 }
 
@@ -120,10 +99,13 @@ impl FromStr for Arrangement {
     type Err = ArrangementParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut stones = Vec::new();
+        let mut stones = HashMap::new();
 
         for item in s.split(' ') {
-            stones.push(item.parse().map_err(|_| ArrangementParseError {})?);
+            stones
+                .entry(item.parse().map_err(|_| ArrangementParseError {})?)
+                .and_modify(|count| *count += 1)
+                .or_insert(1);
         }
 
         Ok(Arrangement { stones })
@@ -132,7 +114,14 @@ impl FromStr for Arrangement {
 
 impl<const N: usize> From<[u64; N]> for Arrangement {
     fn from(input: [u64; N]) -> Self {
-        let stones = input.into_iter().map(Stone::from).collect();
+        let mut stones = HashMap::new();
+
+        for stone in input.into_iter().map(Stone::from) {
+            stones
+                .entry(stone)
+                .and_modify(|count| *count += 1)
+                .or_insert(1);
+        }
 
         Arrangement { stones }
     }

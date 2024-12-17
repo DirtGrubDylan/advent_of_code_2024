@@ -8,25 +8,13 @@ pub fn run() {
     let input = to_string_vector("inputs/day_11.txt").expect("Something went wrong with Day 11!");
 
     println!("Day 11 Part 1: {:?}", part_1(&input));
-    // println!("Day 11 Part 2: {:?}", part_2(&input));
+    println!("Day 11 Part 2: {:?}", part_2(&input));
 }
 
 fn part_1(input: &[String]) -> usize {
     let mut stones: Arrangement = input.first().map(|line| line.parse().unwrap()).unwrap();
 
-    println!("{:?}", stones.temp_iter());
-
-    stones.nth(2);
-
-    println!("{:?}", stones.temp_iter());
-
     stones.nth(24);
-
-    // println!("{:?}", stones.stone_counter());
-    // println!(
-    //     "{:?}",
-    //     stones.stone_counter().iter().max_by_key(|(_, v)| **v)
-    // );
 
     stones.number_of_stones()
 }
@@ -34,7 +22,7 @@ fn part_1(input: &[String]) -> usize {
 fn part_2(input: &[String]) -> usize {
     let mut stones: Arrangement = input.first().map(|line| line.parse().unwrap()).unwrap();
 
-    stones.nth(75);
+    stones.nth(74);
 
     stones.number_of_stones()
 }
