@@ -1,5 +1,6 @@
 use crate::util::point_2d::Point2d;
 use std::collections::{HashMap, HashSet};
+use std::string::ToString;
 
 const UP: Point2d<i32> = Point2d { x: 0, y: -1 };
 const RIGHT: Point2d<i32> = Point2d { x: 1, y: 0 };
@@ -63,10 +64,6 @@ impl Region {
     fn add_locations(&mut self, locations: &HashSet<Point2d<i32>>) {
         self.locations.extend(locations);
     }
-
-    fn add_location(&mut self, location: Point2d<i32>) -> bool {
-        self.locations.insert(location)
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -75,14 +72,8 @@ pub struct Garden {
 }
 
 impl Garden {
-    fn new() -> Self {
-        Garden {
-            regions: Vec::new(),
-        }
-    }
-
     pub fn total_price(&self) -> usize {
-        self.regions.iter().map(|region| region.price()).sum()
+        self.regions.iter().map(Region::price).sum()
     }
 
     fn to_map(input: &[String]) -> HashMap<Point2d<i32>, Plant> {
@@ -116,7 +107,7 @@ impl Garden {
                 start_point,
                 target,
                 &mut seen,
-                &map,
+                map,
             ));
 
             result.push(region);
@@ -182,7 +173,7 @@ impl<const N: usize> From<[&str; N]> for Garden {
         Self::from(
             input
                 .into_iter()
-                .map(|line| line.to_string())
+                .map(ToString::to_string)
                 .collect::<Vec<String>>(),
         )
     }
