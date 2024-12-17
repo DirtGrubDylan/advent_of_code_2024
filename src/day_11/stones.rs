@@ -10,7 +10,7 @@ pub struct Stone {
 }
 
 impl Stone {
-    fn apply_rules(&self) -> Vec<Self> {
+    fn apply_rules(self) -> Vec<Self> {
         match self.to_string().as_str() {
             "0" => vec![Self::from(1)],
             s if s.len() % 2 == 0 => {
@@ -22,11 +22,11 @@ impl Stone {
         }
     }
 
-    fn multiply(&self) -> Self {
+    fn multiply(self) -> Self {
         Self::from(self.engraving * 2_024)
     }
 
-    fn split(&self) -> (Self, Self) {
+    fn split(self) -> (Self, Self) {
         let string_val = self.to_string();
 
         let (first, second) = string_val.split_at(string_val.len() / 2);
@@ -86,7 +86,7 @@ impl Iterator for Arrangement {
             }
         }
 
-        self.stones = new_stones.clone();
+        self.stones.clone_from(&new_stones);
 
         Some(Arrangement { stones: new_stones })
     }
