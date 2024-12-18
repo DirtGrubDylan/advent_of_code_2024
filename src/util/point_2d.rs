@@ -16,7 +16,6 @@ where
         + DivAssign
         + Neg<Output = T>
         + Ord
-        + Into<f64>
         + From<u8>
         + Copy,
 {
@@ -37,7 +36,6 @@ where
         + Neg<Output = T>
         + Rem<Output = T>
         + Ord
-        + Into<f64>
         + From<u8>
         + Copy,
 {
@@ -66,7 +64,6 @@ where
         + Neg<Output = T>
         + Rem<Output = T>
         + Ord
-        + Into<f64>
         + From<u8>
         + Copy,
 {
@@ -90,7 +87,6 @@ where
         + Neg<Output = T>
         + Rem<Output = T>
         + Ord
-        + Into<f64>
         + From<u8>
         + Copy,
 {
@@ -113,7 +109,6 @@ where
         + Neg<Output = T>
         + Rem<Output = T>
         + Ord
-        + Into<f64>
         + From<u8>
         + Copy,
 {
@@ -137,7 +132,6 @@ where
         + Neg<Output = T>
         + Rem<Output = T>
         + Ord
-        + Into<f64>
         + From<u8>
         + Copy,
 {
@@ -160,7 +154,6 @@ where
         + Neg<Output = T>
         + Rem<Output = T>
         + Ord
-        + Into<f64>
         + From<u8>
         + Copy,
 {
@@ -168,6 +161,29 @@ where
 
     fn mul(self, rhs: Self) -> Self::Output {
         Point2d::new(self.x * rhs.x, self.y * rhs.y)
+    }
+}
+
+impl<T> Mul<T> for Point2d<T>
+where
+    T: Add<Output = T>
+        + AddAssign
+        + Sub<Output = T>
+        + SubAssign
+        + Mul<Output = T>
+        + MulAssign
+        + Div<Output = T>
+        + DivAssign
+        + Neg<Output = T>
+        + Rem<Output = T>
+        + Ord
+        + From<u8>
+        + Copy,
+{
+    type Output = Self;
+
+    fn mul(self, rhs: T) -> Self::Output {
+        Point2d::new(self.x * rhs, self.y * rhs)
     }
 }
 
@@ -184,13 +200,34 @@ where
         + Neg<Output = T>
         + Rem<Output = T>
         + Ord
-        + Into<f64>
         + From<u8>
         + Copy,
 {
     fn mul_assign(&mut self, rhs: Self) {
         self.x *= rhs.x;
         self.y *= rhs.y;
+    }
+}
+
+impl<T> MulAssign<T> for Point2d<T>
+where
+    T: Add<Output = T>
+        + AddAssign<T>
+        + Sub<Output = T>
+        + SubAssign<T>
+        + Mul<Output = T>
+        + MulAssign<T>
+        + Div<Output = T>
+        + DivAssign<T>
+        + Neg<Output = T>
+        + Rem<Output = T>
+        + Ord
+        + From<u8>
+        + Copy,
+{
+    fn mul_assign(&mut self, rhs: T) {
+        self.x *= rhs;
+        self.y *= rhs;
     }
 }
 
@@ -207,7 +244,6 @@ where
         + Neg<Output = T>
         + Rem<Output = T>
         + Ord
-        + Into<f64>
         + From<u8>
         + Copy,
 {
@@ -231,7 +267,6 @@ where
         + Neg<Output = T>
         + Rem<Output = T>
         + Ord
-        + Into<f64>
         + From<u8>
         + Copy,
 {
@@ -254,7 +289,6 @@ where
         + Neg<Output = T>
         + Rem<Output = T>
         + Ord
-        + Into<f64>
         + From<u8>
         + Copy,
 {
@@ -278,7 +312,6 @@ where
         + Neg<Output = T>
         + Rem<Output = T>
         + Ord
-        + Into<f64>
         + From<u8>
         + Copy,
 {
@@ -300,7 +333,6 @@ where
         + Neg<Output = T>
         + Rem<Output = T>
         + Ord
-        + Into<f64>
         + From<u8>
         + Copy,
 {
@@ -312,23 +344,12 @@ where
 
         relative_x + relative_y
     }
-
-    fn distance_to(&self, other: &Point2d<T>) -> f64 {
-        let relative_x = other.x - self.x;
-        let relative_y = other.y - self.y;
-
-        let temp = (relative_x * relative_x + relative_y * relative_y).into();
-
-        temp.sqrt()
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::collections::HashMap;
-
-    const EPSILON: f64 = 1e-10;
 
     const ORIGIN_POINT: Point2d<i32> = Point2d { x: 0, y: 0 };
 
@@ -350,17 +371,6 @@ mod tests {
         let result = ORIGIN_POINT.manhattan_distance_to(&point);
 
         assert_eq!(result, expected);
-    }
-
-    #[test]
-    fn test_distance_to() {
-        let point = Point2d::new(3, 4);
-
-        let expected = 5.0;
-
-        let result = ORIGIN_POINT.distance_to(&point);
-
-        assert!((result - expected).abs() < EPSILON);
     }
 
     #[test]
