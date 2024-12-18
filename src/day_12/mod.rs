@@ -14,11 +14,13 @@ pub fn run() {
 fn part_1(input: &[String]) -> usize {
     let garden = Garden::from(input);
 
-    garden.total_price()
+    garden.total_price(/*with_discount=*/ false)
 }
 
-fn part_2(_input: &[String]) -> usize {
-    unimplemented!()
+fn part_2(input: &[String]) -> usize {
+    let garden = Garden::from(input);
+
+    garden.total_price(/*with_discount=*/ true)
 }
 
 #[cfg(test)]
@@ -33,10 +35,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not implemented")]
     fn test_part_2() {
         let input = to_string_vector("test_inputs/day_12.txt").unwrap();
 
-        assert_eq!(part_2(&input), 666);
+        assert_eq!(part_2(&input), 1_206);
     }
 }
