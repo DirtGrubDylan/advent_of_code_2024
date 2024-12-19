@@ -2,9 +2,13 @@ use std::collections::HashMap;
 
 use super::point_2d::Point2d;
 
+#[allow(dead_code)]
 const UP: Point2d<i32> = Point2d { x: 0, y: -1 };
+#[allow(dead_code)]
 const RIGHT: Point2d<i32> = Point2d { x: 1, y: 0 };
+#[allow(dead_code)]
 const DOWN: Point2d<i32> = Point2d { x: 0, y: 1 };
+#[allow(dead_code)]
 const LEFT: Point2d<i32> = Point2d { x: -1, y: 0 };
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone, Hash)]
@@ -16,6 +20,7 @@ pub enum Direction {
 }
 
 impl Direction {
+    #[allow(dead_code)]
     fn as_offset(self) -> Point2d<i32> {
         match self {
             Direction::Up => UP,
@@ -25,6 +30,7 @@ impl Direction {
         }
     }
 
+    #[allow(dead_code)]
     fn turn_90_degrees_clockwise(self) -> Self {
         match self {
             Direction::Up => Direction::Right,
@@ -35,7 +41,7 @@ impl Direction {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Default, PartialEq, Clone)]
 pub struct Grid<V>
 where
     V: Clone,
@@ -47,16 +53,12 @@ impl<V> Grid<V>
 where
     V: Clone,
 {
-    pub fn new() -> Self {
-        Grid {
-            data: HashMap::new(),
-        }
-    }
-
+    #[must_use]
     pub fn get(&self, point: Point2d<i32>) -> Option<&V> {
         self.data.get(&point)
     }
 
+    #[must_use]
     pub fn get_from_coords(&self, x: i32, y: i32) -> Option<&V> {
         self.get(Point2d::new(x, y))
     }
@@ -77,6 +79,7 @@ where
         self.remove(Point2d::new(x, y))
     }
 
+    #[allow(dead_code)]
     fn traverse_find<T, P>(
         &self,
         start: Point2d<i32>,
