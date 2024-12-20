@@ -1,4 +1,8 @@
+use std::collections::hash_map::{Entry, Iter, IterMut, Keys, Values};
 use std::collections::HashMap;
+use std::fmt;
+use std::fmt::Display;
+use std::string::ToString;
 
 use super::point_2d::Point2d;
 
@@ -39,19 +43,42 @@ impl Direction {
             Direction::Left => Direction::Up,
         }
     }
+
+    #[allow(dead_code)]
+    fn turn_90_degrees_counter_clockwise(self) -> Self {
+        match self {
+            Direction::Up => Direction::Left,
+            Direction::Right => Direction::Up,
+            Direction::Down => Direction::Right,
+            Direction::Left => Direction::Down,
+        }
+    }
 }
 
-#[derive(Debug, Default, PartialEq, Clone)]
+impl From<char> for Direction {
+    fn from(c: char) -> Self {
+        match c {
+            '^' => Direction::Up,
+            '>' => Direction::Right,
+            'V' => Direction::Down,
+            '<' => Direction::Left,
+            _ => panic!("Cannot parse {c} to Direction"),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct Grid<V>
 where
-    V: Clone,
+    V: Display + Clone,
 {
     data: HashMap<Point2d<i32>, V>,
+    missing_data_string: String,
 }
 
 impl<V> Grid<V>
 where
-    V: Clone,
+    V: Display + Clone,
 {
     #[must_use]
     pub fn get(&self, point: Point2d<i32>) -> Option<&V> {
@@ -61,6 +88,11 @@ where
     #[must_use]
     pub fn get_from_coords(&self, x: i32, y: i32) -> Option<&V> {
         self.get(Point2d::new(x, y))
+    }
+
+    #[must_use]
+    pub fn get_mut(&mut self, point: Point2d<i32>) -> Option<&mut V> {
+        self.data.get_mut(&point)
     }
 
     pub fn insert(&mut self, point: Point2d<i32>, item: &V) -> Option<V> {
@@ -77,6 +109,39 @@ where
 
     pub fn remove_with_coords(&mut self, x: i32, y: i32) -> Option<V> {
         self.remove(Point2d::new(x, y))
+    }
+
+    #[must_use]
+    pub fn iter(&self) -> Iter<'_, Point2d<i32>, V> {
+        self.data.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<'_, Point2d<i32>, V> {
+        self.data.iter_mut()
+    }
+
+    pub fn entry(&mut self, point: Point2d<i32>) -> Entry<'_, Point2d<i32>, V> {
+        self.data.entry(point)
+    }
+
+    #[must_use]
+    pub fn keys(&self) -> Keys<'_, Point2d<i32>, V> {
+        self.data.keys()
+    }
+
+    #[must_use]
+    pub fn values(&self) -> Values<'_, Point2d<i32>, V> {
+        self.data.values()
+    }
+
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
     }
 
     #[allow(dead_code)]
@@ -105,5 +170,69 @@ where
         }
 
         result
+    }
+}
+
+impl<V> Default for Grid<V>
+where
+    V: Display + Clone,
+{
+    fn default() -> Self {
+        Grid {
+            data: HashMap::new(),
+            missing_data_string: String::from("."),
+        }
+    }
+}
+
+impl<V> fmt::Display for Grid<V>
+where
+    V: Display + Clone,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut as_str = String::new();
+
+        let max_point = self
+            .data
+            .keys()
+            .max()
+            .copied()
+            .unwrap_or(Point2d::new(0, 0));
+
+        for row in 0..=max_point.y {
+            for col in 0..=max_point.x {
+                as_str += self
+                    .get(Point2d::new(col, row))
+                    .map(ToString::to_string)
+                    .as_ref()
+                    .unwrap_or(&self.missing_data_string);
+            }
+        }
+
+        write!(f, "{as_str}")
+    }
+}
+
+impl<'a, V> IntoIterator for &'a Grid<V>
+where
+    V: Display + Clone,
+{
+    type Item = (&'a Point2d<i32>, &'a V);
+    type IntoIter = Iter<'a, Point2d<i32>, V>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'a, V> IntoIterator for &'a mut Grid<V>
+where
+    V: Display + Clone,
+{
+    type Item = (&'a Point2d<i32>, &'a mut V);
+    type IntoIter = IterMut<'a, Point2d<i32>, V>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
     }
 }
