@@ -3,7 +3,7 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, Su
 use super::location::Location;
 use super::math;
 
-#[derive(Debug, Eq, PartialEq, PartialOrd, Hash, Copy, Clone, Ord)]
+#[derive(Debug, Default, Eq, PartialEq, PartialOrd, Hash, Copy, Clone, Ord)]
 pub struct Point2d<T>
 where
     T: Add<Output = T>
