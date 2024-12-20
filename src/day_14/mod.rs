@@ -10,15 +10,23 @@ pub fn run() {
     let robots = Robots::new(&input, 101, 103);
 
     println!("Day 14 Part 1: {:?}", part_1(&robots));
-    println!("Day 14 Part 2: {:?}", part_2(&input));
+    println!("Day 14 Part 2: {:?}", part_2(&robots));
 }
 
 fn part_1(robots: &Robots) -> usize {
     robots.safety_factor_after(100)
 }
 
-fn part_2(_input: &[String]) -> usize {
-    unimplemented!()
+fn part_2(robots: &Robots) -> i32 {
+    let seconds = robots.seconds_until_max_line_length();
+
+    let mut clone = robots.clone();
+
+    clone.simulate(seconds);
+
+    println!("{clone}");
+
+    seconds
 }
 
 #[cfg(test)]
@@ -32,13 +40,5 @@ mod tests {
         let robots = Robots::new(&input, 11, 7);
 
         assert_eq!(part_1(&robots), 12);
-    }
-
-    #[test]
-    #[should_panic(expected = "not implemented")]
-    fn test_part_2() {
-        let input = to_string_vector("test_inputs/day_14.txt").unwrap();
-
-        assert_eq!(part_2(&input), 666);
     }
 }

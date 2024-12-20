@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt;
 use std::str::FromStr;
 
@@ -67,10 +68,71 @@ impl Robots {
         clone.quadrants().iter().map(Vec::len).product()
     }
 
-    fn simulate(&mut self, seconds: i32) {
+    pub fn seconds_until_max_line_length(&self) -> i32 {
+        let mut clone = self.clone();
+
+        let mut max_line_length = 0;
+        let mut second = 0;
+
+        // Heuristic i guess lol
+        while max_line_length < 30 {
+            second += 1;
+
+            clone.simulate(1);
+
+            max_line_length = max_line_length.max(clone.max_contiguous_line_length());
+        }
+
+        second
+    }
+
+    pub fn simulate(&mut self, seconds: i32) {
         for robot in &mut self.data {
             robot.simulate(seconds, self.x_size, self.y_size);
         }
+    }
+
+    fn max_contiguous_line_length(&self) -> usize {
+        let locations: HashSet<Point2d<i32>> =
+            self.data.iter().map(|robot| robot.location).collect();
+
+        let mut max_horizontal_line_length = 0;
+        let mut current_horizontal_line_length = 0;
+
+        for row in 0..=self.y_size {
+            for col in 0..=self.x_size {
+                let point_to_check = Point2d::new(col, row);
+
+                if locations.contains(&point_to_check) {
+                    current_horizontal_line_length += 1;
+                } else {
+                    max_horizontal_line_length =
+                        max_horizontal_line_length.max(current_horizontal_line_length);
+
+                    current_horizontal_line_length = 0;
+                }
+            }
+        }
+
+        let mut max_vertical_line_length = 0;
+        let mut current_vertical_line_length = 0;
+
+        for col in 0..=self.y_size {
+            for row in 0..=self.y_size {
+                let point_to_check = Point2d::new(col, row);
+
+                if locations.contains(&point_to_check) {
+                    current_vertical_line_length += 1;
+                } else {
+                    max_vertical_line_length =
+                        max_vertical_line_length.max(current_vertical_line_length);
+
+                    current_vertical_line_length = 0;
+                }
+            }
+        }
+
+        max_horizontal_line_length.max(max_vertical_line_length)
     }
 
     fn quadrants(&self) -> Vec<Vec<Robot>> {

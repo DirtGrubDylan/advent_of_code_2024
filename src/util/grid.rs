@@ -3,13 +3,13 @@ use std::collections::HashMap;
 use super::point_2d::Point2d;
 
 #[allow(dead_code)]
-const UP: Point2d<i32> = Point2d { x: 0, y: -1 };
+pub const UP: Point2d<i32> = Point2d { x: 0, y: -1 };
 #[allow(dead_code)]
-const RIGHT: Point2d<i32> = Point2d { x: 1, y: 0 };
+pub const RIGHT: Point2d<i32> = Point2d { x: 1, y: 0 };
 #[allow(dead_code)]
-const DOWN: Point2d<i32> = Point2d { x: 0, y: 1 };
+pub const DOWN: Point2d<i32> = Point2d { x: 0, y: 1 };
 #[allow(dead_code)]
-const LEFT: Point2d<i32> = Point2d { x: -1, y: 0 };
+pub const LEFT: Point2d<i32> = Point2d { x: -1, y: 0 };
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone, Hash)]
 pub enum Direction {
