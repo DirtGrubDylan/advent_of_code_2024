@@ -24,8 +24,8 @@ pub enum Direction {
 }
 
 impl Direction {
-    #[allow(dead_code)]
-    fn as_offset(self) -> Point2d<i32> {
+    #[must_use]
+    pub fn as_offset(self) -> Point2d<i32> {
         match self {
             Direction::Up => UP,
             Direction::Right => RIGHT,
@@ -60,7 +60,7 @@ impl From<char> for Direction {
         match c {
             '^' => Direction::Up,
             '>' => Direction::Right,
-            'V' => Direction::Down,
+            'v' | 'V' => Direction::Down,
             '<' => Direction::Left,
             _ => panic!("Cannot parse {c} to Direction"),
         }
@@ -190,7 +190,7 @@ where
     V: Display + Clone,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut as_str = String::new();
+        let mut string_array = Vec::new();
 
         let max_point = self
             .data
@@ -200,16 +200,44 @@ where
             .unwrap_or(Point2d::new(0, 0));
 
         for row in 0..=max_point.y {
+            let mut temp_string = String::new();
+
             for col in 0..=max_point.x {
-                as_str += self
+                temp_string += self
                     .get(Point2d::new(col, row))
                     .map(ToString::to_string)
                     .as_ref()
                     .unwrap_or(&self.missing_data_string);
             }
+
+            string_array.push(temp_string);
         }
 
-        write!(f, "{as_str}")
+        write!(f, "{}", string_array.join("\n"))
+    }
+}
+
+impl<V> From<HashMap<Point2d<i32>, V>> for Grid<V>
+where
+    V: Display + Clone,
+{
+    fn from(data: HashMap<Point2d<i32>, V>) -> Self {
+        Grid {
+            data,
+            missing_data_string: String::from("."),
+        }
+    }
+}
+
+impl<const N: usize, V> From<[(Point2d<i32>, V); N]> for Grid<V>
+where
+    V: Display + Clone,
+{
+    fn from(data: [(Point2d<i32>, V); N]) -> Self {
+        Grid {
+            data: HashMap::from(data),
+            missing_data_string: String::from("."),
+        }
     }
 }
 
