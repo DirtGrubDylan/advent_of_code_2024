@@ -13,15 +13,22 @@ pub fn run() {
 }
 
 fn part_1(input: &[String]) -> i32 {
-    let input_split: Vec<Vec<String>> = input
-        .split(String::is_empty)
-        .map(<[String]>::to_vec)
-        .collect();
+    let (warehouse_input, moves_input) = split_input(input);
 
-    let (warehouse_input, moves_input) =
-        (input_split.first().unwrap(), input_split.last().unwrap());
+    calculate_gps_coordinate_sum(&warehouse_input, &moves_input)
+}
 
-    let mut warehouse = Warehouse::from(warehouse_input.as_slice());
+fn part_2(input: &[String]) -> i32 {
+    let (warehouse_input, moves_input) = split_input(input);
+
+    let widened_warehouse_input = widen(&warehouse_input);
+
+    calculate_gps_coordinate_sum(&widened_warehouse_input, &moves_input)
+}
+
+fn calculate_gps_coordinate_sum(warehouse_input: &[String], moves_input: &[String]) -> i32 {
+    let mut warehouse = Warehouse::from(warehouse_input);
+
     let moves: Vec<Direction> = moves_input
         .iter()
         .flat_map(|line| line.chars())
@@ -33,8 +40,28 @@ fn part_1(input: &[String]) -> i32 {
     warehouse.box_gps_coordinates().into_iter().sum()
 }
 
-fn part_2(_input: &[String]) -> usize {
-    unimplemented!()
+fn split_input(input: &[String]) -> (Vec<String>, Vec<String>) {
+    let input_split: Vec<Vec<String>> = input
+        .split(String::is_empty)
+        .map(<[String]>::to_vec)
+        .collect();
+
+    (
+        input_split.first().cloned().unwrap(),
+        input_split.last().cloned().unwrap(),
+    )
+}
+
+fn widen(input: &[String]) -> Vec<String> {
+    input
+        .iter()
+        .map(|line| {
+            line.replace('#', "##")
+                .replace('O', "[]")
+                .replace('.', "..")
+                .replace('@', "@.")
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -49,10 +76,33 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not implemented")]
     fn test_part_2() {
         let input = to_string_vector("test_inputs/day_15.txt").unwrap();
 
-        assert_eq!(part_2(&input), 666);
+        assert_eq!(part_2(&input), 9_021);
+    }
+
+    #[test]
+    fn test_widen() {
+        let input = to_string_vector("test_inputs/day_15.txt").unwrap();
+
+        let warehouse_input = split_input(&input).0;
+
+        let expected = vec![
+            String::from("####################"),
+            String::from("##....[]....[]..[]##"),
+            String::from("##............[]..##"),
+            String::from("##..[][]....[]..[]##"),
+            String::from("##....[]@.....[]..##"),
+            String::from("##[]##....[]......##"),
+            String::from("##[]....[]....[]..##"),
+            String::from("##..[][]..[]..[][]##"),
+            String::from("##........[]......##"),
+            String::from("####################"),
+        ];
+
+        let result = widen(&warehouse_input);
+
+        assert_eq!(result, expected);
     }
 }
