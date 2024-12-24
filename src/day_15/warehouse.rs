@@ -8,7 +8,7 @@ enum Item {
     Empty,
     Wall,
     Box,
-    Robot { facing: Direction },
+    Robot,
 }
 
 impl Item {}
@@ -19,7 +19,7 @@ impl fmt::Display for Item {
             Item::Empty => String::from("."),
             Item::Wall => String::from("#"),
             Item::Box => String::from("O"),
-            Item::Robot { facing: _ } => String::from("@"),
+            Item::Robot => String::from("@"),
         };
 
         write!(f, "{string_value}")
@@ -32,9 +32,7 @@ impl From<char> for Item {
             '.' => Item::Empty,
             '#' => Item::Wall,
             'O' => Item::Box,
-            '@' => Item::Robot {
-                facing: Direction::Up,
-            },
+            '@' => Item::Robot,
             _ => panic!("Cannot parse {value} into an Item!"),
         }
     }
@@ -57,38 +55,31 @@ impl Warehouse {
 
     pub fn move_robot(&mut self, moves: &[Direction]) {
         for direction in moves {
-            self.swap(
-                self.robot_location,
-                self.robot_location + direction.as_offset(),
-                *direction,
-            );
+            self.move_point(self.robot_location, *direction);
         }
     }
 
-    fn swap(
-        &mut self,
-        a: Point2d<i32>,
-        b: Point2d<i32>,
-        direction: Direction,
-    ) -> Option<Point2d<i32>> {
-        let item_a = self.map.get(a).copied().unwrap();
-        let item_b = self.map.get(b).copied().unwrap();
+    fn move_point(&mut self, point: Point2d<i32>, direction: Direction) -> Option<Point2d<i32>> {
+        let next_point = point + direction.as_offset();
 
-        let result = match item_b {
+        let item = self.map.get(point).copied().unwrap();
+        let next_item = self.map.get(next_point).copied().unwrap();
+
+        let result = match next_item {
             Item::Box => self
-                .swap(b, b + direction.as_offset(), direction)
-                .and_then(|_| self.swap(a, b, direction)),
+                .move_point(next_point, direction)
+                .and_then(|_| self.move_point(point, direction)),
             Item::Empty => {
-                self.map.insert(b, &item_a);
+                self.map.insert(next_point, &item);
 
-                self.map.insert(a, &item_b);
+                self.map.insert(point, &next_item);
 
-                Some(b)
+                Some(next_point)
             }
             _ => None,
         };
 
-        if let (Item::Robot { facing: _ }, Some(point)) = (item_a, result) {
+        if let (Item::Robot, Some(point)) = (item, result) {
             self.robot_location = point;
         }
 
@@ -127,7 +118,7 @@ impl From<&[String]> for Warehouse {
 
                 let item = Item::from(c);
 
-                if let &Item::Robot { facing: _ } = &item {
+                if let &Item::Robot = &item {
                     robot_start = point;
                 }
 
@@ -158,12 +149,7 @@ mod tests {
             (Point2d::new(1, 1), Item::Box),
             (Point2d::new(2, 1), Item::Wall),
             (Point2d::new(0, 2), Item::Wall),
-            (
-                Point2d::new(1, 2),
-                Item::Robot {
-                    facing: Direction::Up,
-                },
-            ),
+            (Point2d::new(1, 2), Item::Robot),
             (Point2d::new(2, 2), Item::Wall),
             (Point2d::new(0, 3), Item::Wall),
             (Point2d::new(1, 3), Item::Wall),
@@ -212,7 +198,7 @@ mod tests {
 
         let expected = Point2d::new(4, 3);
 
-        let result = warehouse.swap(Point2d::new(4, 4), Point2d::new(4, 3), Direction::Up);
+        let result = warehouse.move_point(Point2d::new(4, 4), Direction::Up);
 
         assert_eq!(result, Some(expected));
         assert_eq!(warehouse, expected_warehouse);
@@ -250,7 +236,7 @@ mod tests {
 
         let expected = Point2d::new(3, 4);
 
-        let result = warehouse.swap(Point2d::new(4, 4), Point2d::new(3, 4), Direction::Left);
+        let result = warehouse.move_point(Point2d::new(4, 4), Direction::Left);
 
         assert_eq!(result, Some(expected));
         assert_eq!(warehouse, expected_warehouse);
@@ -286,7 +272,7 @@ mod tests {
             "##########",
         ]);
 
-        let result = warehouse.swap(Point2d::new(4, 4), Point2d::new(3, 4), Direction::Left);
+        let result = warehouse.move_point(Point2d::new(4, 4), Direction::Left);
 
         assert!(result.is_none());
         assert_eq!(warehouse, expected_warehouse);
@@ -322,7 +308,7 @@ mod tests {
             "##########",
         ]);
 
-        let result = warehouse.swap(Point2d::new(1, 4), Point2d::new(0, 4), Direction::Left);
+        let result = warehouse.move_point(Point2d::new(1, 4), Direction::Left);
 
         assert!(result.is_none());
         assert_eq!(warehouse, expected_warehouse);
