@@ -123,7 +123,7 @@ impl Maze {
     }
 
     pub fn number_of_optimal_sitting_spots(&self) -> usize {
-        let mut spots: HashSet<Point2d<i32>> = HashSet::new();
+        let mut spots = HashSet::new();
 
         let backtrack = self.path_backtrack();
 
@@ -139,18 +139,19 @@ impl Maze {
 
         let mut backtrack_nodes = vec![&end_node];
 
-        while !backtrack_nodes.is_empty() {
-            let current_node = backtrack_nodes.pop().unwrap();
+        while let Some(current_node) = backtrack_nodes.pop() {
+            spots.insert(current_node.location);
 
             for node in backtrack.get(&current_node.location).unwrap() {
-                if node.score < current_node.score {
+                let score_diff = current_node.score.saturating_sub(node.score);
+
+                if (score_diff == 1_001) || (score_diff == 1) {
                     backtrack_nodes.push(node);
-                    spots.insert(node.location);
                 }
             }
         }
 
-        spots.len() + 1
+        spots.len()
     }
 
     fn path_backtrack(&self) -> HashMap<Point2d<i32>, Vec<SearchNode>> {
@@ -175,7 +176,7 @@ impl Maze {
                 Some(Item::Empty | Item::Start) if seen_locations.insert(location_facing) => {
                     backtrack
                         .entry(search_node_forward.location)
-                        .or_insert(Vec::new())
+                        .or_default()
                         .push(search_node);
 
                     heap.push(Reverse(search_node_forward));
@@ -338,6 +339,26 @@ mod tests {
         ]);
 
         assert_eq!(maze.number_of_optimal_sitting_spots(), 45);
+    }
+
+    #[test]
+    fn test_maze_number_of_optimal_sitting_spots_complicated() {
+        let maze = Maze::from(&[
+            "####################",
+            "####.##########.#.##",
+            "##..............#..#",
+            "##.#.##.#######.####",
+            "#..#.##.....#...#..#",
+            "##.#.######.#.#.#.##",
+            "##....#...........E#",
+            "##.####.#####.###.##",
+            "#.........#.#.#...##",
+            "##.####.#.#.#.#.####",
+            "#S.#################",
+            "####################",
+        ]);
+
+        assert_eq!(maze.number_of_optimal_sitting_spots(), 22);
     }
 
     #[test]
