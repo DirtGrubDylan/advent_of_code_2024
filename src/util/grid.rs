@@ -34,8 +34,8 @@ impl Direction {
         }
     }
 
-    #[allow(dead_code)]
-    fn turn_90_degrees_clockwise(self) -> Self {
+    #[must_use]
+    pub fn turn_90_degrees_clockwise(self) -> Self {
         match self {
             Direction::Up => Direction::Right,
             Direction::Right => Direction::Down,
@@ -44,8 +44,8 @@ impl Direction {
         }
     }
 
-    #[allow(dead_code)]
-    fn turn_90_degrees_counter_clockwise(self) -> Self {
+    #[must_use]
+    pub fn turn_90_degrees_counter_clockwise(self) -> Self {
         match self {
             Direction::Up => Direction::Left,
             Direction::Right => Direction::Up,
