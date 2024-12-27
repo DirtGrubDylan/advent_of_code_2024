@@ -127,18 +127,30 @@ impl Maze {
 
         let backtrack = self.path_backtrack();
 
-        let mut backtrack_nodes = backtrack.get(&self.ending_location).unwrap().clone();
-        let mut current_score = backtrack_nodes
+        let end_score = backtrack
+            .get(&self.ending_location)
+            .unwrap()
             .iter()
             .map(|node| node.score + 1)
             .min()
             .unwrap();
 
+        let end_node = SearchNode::new(end_score, self.ending_location, Direction::Right);
+
+        let mut backtrack_nodes = vec![&end_node];
+
         while !backtrack_nodes.is_empty() {
             let current_node = backtrack_nodes.pop().unwrap();
+
+            for node in backtrack.get(&current_node.location).unwrap() {
+                if node.score < current_node.score {
+                    backtrack_nodes.push(node);
+                    spots.insert(node.location);
+                }
+            }
         }
 
-        spots.len()
+        spots.len() + 1
     }
 
     fn path_backtrack(&self) -> HashMap<Point2d<i32>, Vec<SearchNode>> {
