@@ -17,8 +17,10 @@ fn part_1(input: &[String]) -> u32 {
     maze.lowest_path_score()
 }
 
-fn part_2(_input: &[String]) -> u32 {
-    unimplemented!()
+fn part_2(input: &[String]) -> usize {
+    let maze = Maze::from(input);
+
+    maze.number_of_optimal_sitting_spots()
 }
 
 #[cfg(test)]
@@ -33,10 +35,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not implemented")]
     fn test_part_2() {
         let input = to_string_vector("test_inputs/day_16.txt").unwrap();
 
-        assert_eq!(part_2(&input), 666);
+        assert_eq!(part_2(&input), 64);
     }
 }
