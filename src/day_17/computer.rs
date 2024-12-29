@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::string::ToString;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -92,61 +91,37 @@ impl Computer {
     }
 
     pub fn lowest_register_a_value_to_produce_program_copy(&self) -> usize {
-        let mut output_to_register_a_input = HashMap::new();
         let stack_without_jump = self.stack[0..(self.stack.len() - 2)].to_vec();
 
         let mut clone = self.clone();
 
         clone.stack = stack_without_jump;
 
-        println!("Min Inputs to Outputs");
-        for register_a_value in 0..64 {
-            clone.reset_with_register_a(register_a_value);
+        let mut result = 0;
 
-            clone.execute_stack();
+        for required_output in self.stack.iter().rev() {
+            result *= 8;
 
-            if let Some(output) = clone.output.get(0) {
-                if !output_to_register_a_input.contains_key(output) {
-                    output_to_register_a_input.insert(*output, register_a_value);
+            loop {
+                clone.reset_with_register_a(result);
+
+                clone.execute_stack();
+
+                match clone.output.first() {
+                    Some(current_output) if current_output == required_output => {
+                        break;
+                    }
+                    Some(_) => {
+                        result += 1;
+                    }
+                    None => panic!("Something went horribly wrong lol"),
                 }
             }
         }
 
-        for (output, input) in &output_to_register_a_input {}
-
-        let min_inputs_rev: Vec<usize> = self
-            .stack
-            .iter()
-            .rev()
-            .filter_map(|output| output_to_register_a_input.get(output))
-            .copied()
-            .collect();
-
-        println!("{min_inputs_rev:?}");
-
-        let result = min_inputs_rev.iter().fold(0, |acc, min_input| {
-            let res = acc * 8 + min_input;
-            println!("{min_input} -> {res}");
-            res
-        });
-
         clone.reset_with_register_a(result);
-        clone.stack = self.stack.clone();
+        clone.stack.clone_from(&self.stack);
         clone.execute_stack();
-
-        // 29328
-
-        // A = A / 2
-        // O = A % 8
-
-        // O = [0, ]
-        // A = 29328 / 2 = 14664
-        // O = 0
-        // A = 14664 / 2 = 14664
-        // O = 0
-
-        println!("Ogn: {}", Self::to_comma_joined_string(&self.stack));
-        println!("New: {}", Self::to_comma_joined_string(&clone.output));
 
         result
     }
@@ -248,7 +223,7 @@ impl Computer {
         rhs_info.split(',').filter_map(|s| s.parse().ok()).collect()
     }
 
-    pub fn to_comma_joined_string(input: &[usize]) -> String {
+    fn to_comma_joined_string(input: &[usize]) -> String {
         input
             .iter()
             .map(ToString::to_string)
@@ -639,13 +614,6 @@ mod tests {
             "",
             "Program: 0,3,5,4,3,0",
         ]);
-
-        // 0,     3,    5,   4,  3, 0
-        // 0,    24,   40,  32, 24, 0
-        //    14680, 1832, 224, 24, 0
-
-        // 5 -> 0
-        // 6 -> 3
 
         assert_eq!(
             computer.lowest_register_a_value_to_produce_program_copy(),

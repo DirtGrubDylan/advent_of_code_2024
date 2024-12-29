@@ -29,15 +29,15 @@ mod tests {
 
     #[test]
     fn test_part_1() {
-        let input = to_string_vector("test_inputs/day_17.txt").unwrap();
+        let input = to_string_vector("test_inputs/day_17_part_1.txt").unwrap();
 
         assert_eq!(part_1(&input), String::from("4,6,3,5,6,3,5,2,1,0"));
     }
 
     #[test]
     fn test_part_2() {
-        let input = to_string_vector("test_inputs/day_17.txt").unwrap();
+        let input = to_string_vector("test_inputs/day_17_part_2.txt").unwrap();
 
-        assert_eq!(part_2(&input), 29_327);
+        assert_eq!(part_2(&input), 117_440);
     }
 }
