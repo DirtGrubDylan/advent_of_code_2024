@@ -91,6 +91,10 @@ impl Computer {
     }
 
     pub fn lowest_register_a_value_to_produce_program_copy(&self) -> usize {
+        let initial_program = Self::to_comma_joined_string(self.stack);
+
+        let mut clone = self.clone();
+
         unimplemented!()
     }
 
