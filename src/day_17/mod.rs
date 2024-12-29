@@ -17,8 +17,10 @@ fn part_1(input: &[String]) -> String {
     computer.execute_stack()
 }
 
-fn part_2(_input: &[String]) -> usize {
-    unimplemented!()
+fn part_2(input: &[String]) -> usize {
+    let computer = Computer::from(input);
+
+    computer.lowest_register_a_value_to_produce_program_copy()
 }
 
 #[cfg(test)]
@@ -33,10 +35,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not implemented")]
     fn test_part_2() {
         let input = to_string_vector("test_inputs/day_17.txt").unwrap();
 
-        assert_eq!(part_2(&input), 666);
+        assert_eq!(part_2(&input), 29_327);
     }
 }
