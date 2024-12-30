@@ -73,13 +73,13 @@ impl PartialEq for SearchNode {
 }
 
 #[derive(Debug, PartialEq)]
-struct Computer {
+pub struct Computer {
     memory: Grid<Data>,
     falling_bytes: Vec<FallingByte>,
 }
 
 impl Computer {
-    fn new(col_size: usize, row_size: usize, falling_bytes_input: &[String]) -> Computer {
+    pub fn new(col_size: usize, row_size: usize, falling_bytes_input: &[String]) -> Computer {
         let mut memory = Grid::default();
 
         for row in 0..row_size {
@@ -103,47 +103,79 @@ impl Computer {
         }
     }
 
-    fn shortest_path_after(&self, seconds: usize) -> HashSet<Point2d<i32>> {
-        let mut path = HashSet::new();
+    pub fn first_byte_to_prevent_exit(&self) -> FallingByte {
+        let seconds_array: Vec<usize> = (0..self.falling_bytes.len()).collect();
+
+        let first_index = seconds_array.partition_point(|number_of_bytes_fallen| {
+            0 < self.shortest_path_length_after(*number_of_bytes_fallen + 1)
+        });
+
+        *self.falling_bytes.get(first_index).unwrap()
+    }
+
+    pub fn shortest_path_length_after(&self, number_of_bytes_fallen: usize) -> usize {
+        let mut path_length = 0;
         let mut memory = self.memory.clone();
         let ending = self
             .memory
             .keys()
             .max()
-            .cloned()
+            .copied()
             .unwrap_or(Point2d::new(0, 0));
 
-        let mut seconds_so_far = 0;
-
-        for byte in &self.falling_bytes {
-            if seconds_so_far == seconds {
+        for (bytes_so_far, byte) in self.falling_bytes.iter().enumerate() {
+            if bytes_so_far == number_of_bytes_fallen {
                 break;
             }
 
             memory.insert(byte.destination, &Data::Corrupted);
-
-            seconds_so_far += 1;
         }
 
-        path
+        let mut seen = HashSet::new();
+        let mut heap = BinaryHeap::from([Reverse(SearchNode::new(0, Point2d::new(0, 0)))]);
+
+        while let Some(Reverse(node)) = heap.pop() {
+            match memory.get(node.point) {
+                Some(_) if node.point == ending => {
+                    path_length = node.payload;
+
+                    break;
+                }
+                Some(Data::Empty) if seen.insert(node.point) => {
+                    heap.push(Reverse(node.move_to(Direction::Up)));
+                    heap.push(Reverse(node.move_to(Direction::Right)));
+                    heap.push(Reverse(node.move_to(Direction::Down)));
+                    heap.push(Reverse(node.move_to(Direction::Left)));
+                }
+                _ => {}
+            }
+        }
+
+        path_length
     }
 }
 
-#[derive(Debug, PartialEq)]
-struct FallingByte {
+#[derive(Debug, PartialEq, Copy, Clone)]
+pub struct FallingByte {
     destination: Point2d<i32>,
 }
 
 impl FallingByte {
-    fn new(x: i32, y: i32) -> Self {
+    pub fn new(x: i32, y: i32) -> Self {
         FallingByte {
             destination: Point2d::new(x, y),
         }
     }
 }
 
+impl fmt::Display for FallingByte {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{},{}", self.destination.x, self.destination.y)
+    }
+}
+
 #[derive(Debug, PartialEq)]
-struct FallingByteParseError;
+pub struct FallingByteParseError;
 
 impl FromStr for FallingByte {
     type Err = FallingByteParseError;
@@ -208,6 +240,45 @@ mod tests {
 
         let computer = Computer::new(7, 7, &falling_byte_input);
 
-        assert_eq!(computer.shortest_path().len(), 22);
+        assert_eq!(computer.shortest_path_length_after(12), 22);
+    }
+
+    #[test]
+    fn test_computer_first_byte_to_prevent_exit() {
+        let falling_byte_input = [
+            String::from("5,4"),
+            String::from("4,2"),
+            String::from("4,5"),
+            String::from("3,0"),
+            String::from("2,1"),
+            String::from("6,3"),
+            String::from("2,4"),
+            String::from("1,5"),
+            String::from("0,6"),
+            String::from("3,3"),
+            String::from("2,6"),
+            String::from("5,1"),
+            String::from("1,2"),
+            String::from("5,5"),
+            String::from("2,5"),
+            String::from("6,5"),
+            String::from("1,4"),
+            String::from("0,4"),
+            String::from("6,4"),
+            String::from("1,1"),
+            String::from("6,1"),
+            String::from("1,0"),
+            String::from("0,5"),
+            String::from("1,6"),
+            String::from("2,0"),
+        ];
+
+        let computer = Computer::new(7, 7, &falling_byte_input);
+
+        let expected = FallingByte::new(6, 1);
+
+        let result = computer.first_byte_to_prevent_exit();
+
+        assert_eq!(result, expected);
     }
 }
