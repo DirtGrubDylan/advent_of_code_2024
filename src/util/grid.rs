@@ -53,6 +53,16 @@ impl Direction {
             Direction::Left => Direction::Down,
         }
     }
+
+    #[must_use]
+    pub fn opposite(self) -> Self {
+        match self {
+            Direction::Up => Direction::Down,
+            Direction::Right => Direction::Left,
+            Direction::Down => Direction::Up,
+            Direction::Left => Direction::Right,
+        }
+    }
 }
 
 impl From<char> for Direction {
