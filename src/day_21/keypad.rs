@@ -243,9 +243,6 @@ impl From<&DirectionPad> for DirectionPad {
                 .min()
                 .unwrap();
 
-            // let cost_from_controller =
-            //     controller.cost_to_press(&from.presses_to_traverse_and_press(to_press));
-
             press_costs_from_controller.insert((from, to_press), minimum_cost_from_controller);
         }
 
