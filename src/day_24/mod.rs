@@ -1,10 +1,10 @@
 use crate::util::file_reader::to_string_vector;
 
 pub fn run() {
-    let input = to_string_vector("inputs/day_7.txt").expect("Something went wrong with Day 7!");
+    let input = to_string_vector("inputs/day_24.txt").expect("Something went wrong with Day 24!");
 
-    println!("Day 7 Part 1: {:?}", part_1(&input));
-    println!("Day 7 Part 2: {:?}", part_2(&input));
+    println!("Day 24 Part 1: {:?}", part_1(&input));
+    println!("Day 24 Part 2: {:?}", part_2(&input));
 }
 
 fn part_1(_input: &[String]) -> usize {
@@ -22,7 +22,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "File not found!")]
     fn test_part_1() {
-        let input = to_string_vector("test_inputs/day_7.txt").unwrap();
+        let input = to_string_vector("test_inputs/day_24.txt").unwrap();
 
         assert_eq!(part_1(&input), 666);
     }
@@ -30,7 +30,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "File not found!")]
     fn test_part_2() {
-        let input = to_string_vector("test_inputs/day_7.txt").unwrap();
+        let input = to_string_vector("test_inputs/day_24.txt").unwrap();
 
         assert_eq!(part_2(&input), 666);
     }
