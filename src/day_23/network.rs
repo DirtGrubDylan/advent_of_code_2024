@@ -26,14 +26,14 @@ impl Computer {
 #[derive(Debug, Default, PartialEq, Clone)]
 struct SearchNode {
     sub_network_ids: HashSet<String>,
-    ids_to_check: HashSet<String>,
+    ids_to_process: HashSet<String>,
 }
 
 impl SearchNode {
     fn new(computer: &Computer) -> Self {
         SearchNode {
             sub_network_ids: HashSet::from([computer.id.clone()]),
-            ids_to_check: computer.ids_connected_to.clone(),
+            ids_to_process: computer.ids_connected_to.clone(),
         }
     }
 
@@ -41,12 +41,20 @@ impl SearchNode {
         self.sub_network_ids.len()
     }
 
+    fn maximum_possible_len(&self) -> usize {
+        self.sub_network_ids.len() + self.ids_to_process.len()
+    }
+
     fn clone_and_add_subnetwork_id_from(&self, computer: &Computer) -> Self {
         let mut clone = self.clone();
 
         clone.sub_network_ids.insert(computer.id.clone());
 
-        clone.ids_to_check.clone_from(&computer.ids_connected_to);
+        clone.ids_to_process = computer
+            .ids_connected_to
+            .difference(&clone.sub_network_ids)
+            .cloned()
+            .collect();
 
         clone
     }
@@ -66,6 +74,37 @@ pub struct Network {
 }
 
 impl Network {
+    pub fn longest_sub_network(&self) -> Vec<String> {
+        let mut seen_sub_networks: HashSet<Vec<String>> = HashSet::new();
+        let mut processing: VecDeque<SearchNode> = self.map.values().map(SearchNode::new).collect();
+
+        let mut max_length_sub_network = Vec::new();
+
+        while let Some(node) = processing.pop_back() {
+            let impossible_to_exceed_maximum =
+                node.maximum_possible_len() <= max_length_sub_network.len();
+
+            let already_seen = !seen_sub_networks.insert(node.sub_network_ids_to_sorted_vec());
+
+            if already_seen || impossible_to_exceed_maximum {
+                continue;
+            }
+
+            if node.len() > max_length_sub_network.len() {
+                max_length_sub_network = node.sub_network_ids_to_sorted_vec();
+            }
+
+            node.ids_to_process
+                .iter()
+                .filter_map(|id| self.map.get(id))
+                .filter(|computer| computer.is_connected_to_all(&node.sub_network_ids))
+                .map(|computer| node.clone_and_add_subnetwork_id_from(computer))
+                .for_each(|new_node| processing.push_back(new_node));
+        }
+
+        max_length_sub_network
+    }
+
     pub fn all_subnetworks_of_size(&self, size: usize) -> HashSet<Vec<String>> {
         let mut result = HashSet::new();
 
@@ -78,7 +117,7 @@ impl Network {
                 continue;
             }
 
-            node.ids_to_check
+            node.ids_to_process
                 .iter()
                 .filter_map(|id| self.map.get(id))
                 .filter(|computer| computer.is_connected_to_all(&node.sub_network_ids))
@@ -166,7 +205,19 @@ mod tests {
     }
 
     #[test]
-    fn test_all_subnetworks_of_size() {
+    fn test_longest_sub_network() {
+        let network = Network::from([
+            "kh-tc", "qp-kh", "de-cg", "ka-co", "yn-aq", "qp-ub", "cg-tb", "vc-aq", "tb-ka",
+            "wh-tc", "yn-cg", "kh-ub", "ta-co", "de-co", "tc-td", "tb-wq", "wh-td", "ta-ka",
+            "td-qp", "aq-cg", "wq-ub", "ub-vc", "de-ta", "wq-aq", "wq-vc", "wh-yn", "ka-de",
+            "kh-ta", "co-tc", "wh-qp", "tb-vc", "td-yn",
+        ]);
+
+        assert_eq!(network.longest_sub_network().join(","), "co,de,ka,ta");
+    }
+
+    #[test]
+    fn test_all_subnetworks_of_size_3() {
         let network = Network::from([
             "kh-tc", "qp-kh", "de-cg", "ka-co", "yn-aq", "qp-ub", "cg-tb", "vc-aq", "tb-ka",
             "wh-tc", "yn-cg", "kh-ub", "ta-co", "de-co", "tc-td", "tb-wq", "wh-td", "ta-ka",
@@ -191,6 +242,7 @@ mod tests {
 
         let result = network.all_subnetworks_of_size(3);
 
+        assert_eq!(result.len(), expected.len());
         for expected_subnetwork in expected {
             assert!(
                 result.contains(&expected_subnetwork),
