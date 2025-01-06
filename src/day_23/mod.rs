@@ -2,6 +2,8 @@ mod network;
 
 use crate::util::file_reader::to_string_vector;
 
+use network::Network;
+
 pub fn run() {
     let input = to_string_vector("inputs/day_23.txt").expect("Something went wrong with Day 23!");
 
@@ -9,8 +11,15 @@ pub fn run() {
     println!("Day 23 Part 2: {:?}", part_2(&input));
 }
 
-fn part_1(_input: &[String]) -> usize {
-    unimplemented!()
+fn part_1(input: &[String]) -> usize {
+    let network = Network::from(input);
+
+    network
+        .all_subnetworks_of_size(3)
+        .into_iter()
+        .map(|ids| ids.iter().filter(|id| id.starts_with('t')).count())
+        .filter(|count| *count > 0)
+        .count()
 }
 
 fn part_2(_input: &[String]) -> usize {
@@ -22,15 +31,14 @@ mod tests {
     use super::*;
 
     #[test]
-    #[should_panic(expected = "File not found!")]
     fn test_part_1() {
         let input = to_string_vector("test_inputs/day_23.txt").unwrap();
 
-        assert_eq!(part_1(&input), 666);
+        assert_eq!(part_1(&input), 7);
     }
 
     #[test]
-    #[should_panic(expected = "File not found!")]
+    #[should_panic(expected = "not implemented")]
     fn test_part_2() {
         let input = to_string_vector("test_inputs/day_23.txt").unwrap();
 
