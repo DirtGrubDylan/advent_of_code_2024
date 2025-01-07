@@ -4,6 +4,13 @@ struct Lock {
 }
 
 impl Lock {
+    fn key_has_overlap(&self, key: &Key) -> bool {
+        key.heights
+            .iter()
+            .zip(self.pin_heights.iter())
+            .any(|(key_height, pin_height)| *key_height > (5 - *pin_height))
+    }
+
     fn input_is_valid(input: &[String]) -> bool {
         input
             .first()
@@ -23,7 +30,7 @@ impl<const N: usize> From<[&str; N]> for Lock {
 
 impl From<&[String]> for Lock {
     fn from(input: &[String]) -> Self {
-        let mut pin_heights = vec![0; 5];
+        let mut pin_heights = vec![-1; 5];
 
         for line in input {
             for (index, _) in line.chars().enumerate().filter(|(_, c)| *c == '#') {
@@ -62,7 +69,7 @@ impl<const N: usize> From<[&str; N]> for Key {
 
 impl From<&[String]> for Key {
     fn from(input: &[String]) -> Self {
-        let mut heights = vec![0; 5];
+        let mut heights = vec![-1; 5];
 
         for line in input {
             for (index, _) in line.chars().enumerate().filter(|(_, c)| *c == '#') {
@@ -77,9 +84,25 @@ impl From<&[String]> for Key {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-struct System {
+pub struct System {
     locks: Vec<Lock>,
     keys: Vec<Key>,
+}
+
+impl System {
+    pub fn number_of_keys_that_fit_without_overlap(&self) -> usize {
+        let mut result = 0;
+
+        for key in &self.keys {
+            for lock in &self.locks {
+                if !lock.key_has_overlap(key) {
+                    result += 1;
+                }
+            }
+        }
+
+        result
+    }
 }
 
 impl<const N: usize> From<[&str; N]> for System {
@@ -141,7 +164,7 @@ mod tests {
     #[test]
     fn test_lock_from_str_array() {
         let expected = Lock {
-            pin_heights: vec![4, 1, 5, 3, 5],
+            pin_heights: vec![3, 0, 4, 2, 4],
         };
 
         let result = Lock::from([
@@ -149,6 +172,27 @@ mod tests {
         ]);
 
         assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_lock_key_has_overlap() {
+        let lock = Lock::from([
+            "#####", ".####", ".####", ".####", ".#.#.", ".#...", ".....",
+        ]);
+
+        let key_1 = Key::from([
+            ".....", "#....", "#....", "#...#", "#.#.#", "#.###", "#####",
+        ]);
+        let key_2 = Key::from([
+            ".....", ".....", "#.#..", "###..", "###.#", "###.#", "#####",
+        ]);
+        let key_3 = Key::from([
+            ".....", ".....", ".....", "#....", "#.#..", "#.#.#", "#####",
+        ]);
+
+        assert!(lock.key_has_overlap(&key_1));
+        assert!(lock.key_has_overlap(&key_2));
+        assert!(!lock.key_has_overlap(&key_3));
     }
 
     #[test]
@@ -179,7 +223,7 @@ mod tests {
     #[test]
     fn test_key_from_str_array() {
         let expected = Key {
-            heights: vec![6, 5, 1, 4, 1],
+            heights: vec![5, 4, 0, 3, 0],
         };
 
         let result = Key::from([
@@ -193,22 +237,22 @@ mod tests {
     fn test_system_from_str_array() {
         let expected_locks = vec![
             Lock {
-                pin_heights: vec![1, 6, 4, 5, 4],
+                pin_heights: vec![0, 5, 3, 4, 3],
             },
             Lock {
-                pin_heights: vec![2, 3, 1, 6, 4],
+                pin_heights: vec![1, 2, 0, 5, 3],
             },
         ];
 
         let expected_keys = vec![
             Key {
-                heights: vec![6, 1, 3, 2, 4],
+                heights: vec![5, 0, 2, 1, 3],
             },
             Key {
-                heights: vec![5, 4, 5, 1, 3],
+                heights: vec![4, 3, 4, 0, 2],
             },
             Key {
-                heights: vec![4, 1, 3, 1, 2],
+                heights: vec![3, 0, 2, 0, 1],
             },
         ];
 
@@ -225,5 +269,17 @@ mod tests {
         ]);
 
         assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_number_of_keys_that_fit_without_overlap() {
+        let system = System::from([
+            "#####", ".####", ".####", ".####", ".#.#.", ".#...", ".....", "", "#####", "##.##",
+            ".#.##", "...##", "...#.", "...#.", ".....", "", ".....", "#....", "#....", "#...#",
+            "#.#.#", "#.###", "#####", "", ".....", ".....", "#.#..", "###..", "###.#", "###.#",
+            "#####", "", ".....", ".....", ".....", "#....", "#.#..", "#.#.#", "#####",
+        ]);
+
+        assert_eq!(system.number_of_keys_that_fit_without_overlap(), 3);
     }
 }
