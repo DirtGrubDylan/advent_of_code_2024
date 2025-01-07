@@ -1,18 +1,19 @@
+mod locks;
+
 use crate::util::file_reader::to_string_vector;
+
+use locks::System;
 
 pub fn run() {
     let input = to_string_vector("inputs/day_25.txt").expect("Something went wrong with Day 25!");
 
     println!("Day 25 Part 1: {:?}", part_1(&input));
-    println!("Day 25 Part 2: {:?}", part_2(&input));
 }
 
-fn part_1(_input: &[String]) -> usize {
-    unimplemented!()
-}
+fn part_1(input: &[String]) -> usize {
+    let system = System::from(input);
 
-fn part_2(_input: &[String]) -> usize {
-    unimplemented!()
+    system.number_of_keys_that_fit_without_overlap()
 }
 
 #[cfg(test)]
@@ -20,18 +21,9 @@ mod tests {
     use super::*;
 
     #[test]
-    #[should_panic(expected = "File not found!")]
     fn test_part_1() {
         let input = to_string_vector("test_inputs/day_25.txt").unwrap();
 
-        assert_eq!(part_1(&input), 666);
-    }
-
-    #[test]
-    #[should_panic(expected = "File not found!")]
-    fn test_part_2() {
-        let input = to_string_vector("test_inputs/day_25.txt").unwrap();
-
-        assert_eq!(part_2(&input), 666);
+        assert_eq!(part_1(&input), 3);
     }
 }
