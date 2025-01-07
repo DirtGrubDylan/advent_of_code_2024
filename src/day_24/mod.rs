@@ -11,20 +11,27 @@ pub fn run() {
     println!("Day 24 Part 2: {:?}", part_2(&input));
 }
 
-// output_wire_id: "z\d{2}", operation: [^X]
-
 fn part_1(input: &[String]) -> u64 {
     let mut circuit_board = CircuitBoard::from(input);
 
-    circuit_board.fix_gate_ouputs();
-
     circuit_board.process();
 
-    circuit_board.number_from_z_wires()
+    circuit_board.number_from_wires('z')
 }
 
-fn part_2(_input: &[String]) -> u64 {
-    unimplemented!()
+fn part_2(input: &[String]) -> String {
+    let circuit_board = CircuitBoard::from(input);
+
+    let mut outputs_to_swap = Vec::new();
+
+    for (id_a, id_b) in circuit_board.gate_outputs_to_swap() {
+        outputs_to_swap.push(id_a.clone());
+        outputs_to_swap.push(id_b.clone());
+    }
+
+    outputs_to_swap.sort();
+
+    outputs_to_swap.join(",")
 }
 
 #[cfg(test)]
@@ -36,13 +43,5 @@ mod tests {
         let input = to_string_vector("test_inputs/day_24.txt").unwrap();
 
         assert_eq!(part_1(&input), 2_024);
-    }
-
-    #[test]
-    #[should_panic(expected = "not implemented")]
-    fn test_part_2() {
-        let input = to_string_vector("test_inputs/day_24.txt").unwrap();
-
-        assert_eq!(part_2(&input), 666);
     }
 }

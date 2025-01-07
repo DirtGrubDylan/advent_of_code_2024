@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, VecDeque},
-    hash::Hash,
-};
+use std::collections::{HashMap, VecDeque};
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 enum Operation {
@@ -47,8 +44,13 @@ impl Gate {
         }
     }
 
-    fn has_correct_output_id(&self, output_id: &str) -> bool {
-        self.output_wire_id == output_id
+    fn has_input_id(&self, id: &str) -> bool {
+        self.input_wire_id_a == id || self.input_wire_id_b == id
+    }
+
+    fn has_xy_inputs(&self) -> bool {
+        (self.input_wire_id_a.starts_with('x') || self.input_wire_id_a.starts_with('y'))
+            && (self.input_wire_id_b.starts_with('x') || self.input_wire_id_b.starts_with('y'))
     }
 }
 
@@ -107,92 +109,89 @@ impl CircuitBoard {
         }
     }
 
-    pub fn number_from_z_wires(&self) -> u64 {
-        self.z_wires_sorted().iter().rev().fold(0, |acc, wire| {
-            if wire.state {
-                (acc << 1) + 1
-            } else {
-                acc << 1
-            }
-        })
+    pub fn number_from_wires(&self, starts_with: char) -> u64 {
+        self.wires_sorted(starts_with)
+            .iter()
+            .rev()
+            .fold(
+                0,
+                |acc, wire| {
+                    if wire.state {
+                        (acc << 1) + 1
+                    } else {
+                        acc << 1
+                    }
+                },
+            )
     }
 
-    // Gate { input_wire_id_a: "ktr", input_wire_id_b: "ssd", output_wire_id: "cdr", operation: And }
-    // Gate { input_wire_id_a: "cdr", input_wire_id_b: "hjh", output_wire_id: "vmr", operation: Or }
-    // Gate { input_wire_id_a: "fph", input_wire_id_b: "vmr", output_wire_id: "z03", operation: Xor }
-    // ---set z04---
-    // Gate { input_wire_id_a: "fph", input_wire_id_b: "vmr", output_wire_id: "fnf", operation: And }
-    // Gate { input_wire_id_a: "fnf", input_wire_id_b: "wpn", output_wire_id: "bbh", operation: Or }
-    // Gate { input_wire_id_a: "jth", input_wire_id_b: "bbh", output_wire_id: "z04", operation: Xor }
-    pub fn fix_gate_ouputs(&mut self) -> Vec<String> {
-        // order gate outputs starting from highest Z
+    pub fn gate_outputs_to_swap(&self) -> Vec<(String, String)> {
+        let mut result = Vec::new();
+
         let output_ids_to_gates = self.output_ids_to_gates();
 
-        let mut z_ids: Vec<&String> = output_ids_to_gates
-            .keys()
-            .filter(|id| id.starts_with('z'))
+        let xor_non_xy_gates: Vec<&Gate> = self
+            .gates
+            .iter()
+            .filter(|gate| !gate.has_xy_inputs() && (gate.operation == Operation::Xor))
             .collect();
 
-        z_ids.sort();
+        for gate in xor_non_xy_gates {
+            let a_gate = output_ids_to_gates.get(&gate.input_wire_id_a).unwrap();
+            let b_gate = output_ids_to_gates.get(&gate.input_wire_id_b).unwrap();
 
-        let mut processed = Vec::new();
-        let mut processing: VecDeque<&String> = z_ids.into_iter().collect();
+            let correct_output_z_id = Self::relative_z_id_for_id(&a_gate.input_wire_id_a)
+                .or(Self::relative_z_id_for_id(&b_gate.input_wire_id_a));
 
-        while let Some(id) = processing.pop_front() {
-            println!("ID: {id}");
-
-            if let Some(gate) = output_ids_to_gates.get(id) {
-                if let Some(wire) = self.process_gate(&gate) {
-                    self.wires.insert(wire.id, wire.state);
-
-                    if !gate.input_wire_id_a.starts_with('x')
-                        && !gate.input_wire_id_a.starts_with('y')
-                    {
-                        processed.push(gate);
-                    }
-                } else {
-                    processing.push_front(id);
-                    processing.push_front(&gate.input_wire_id_b);
-                    processing.push_front(&gate.input_wire_id_a);
-                }
+            if correct_output_z_id != Some(gate.output_wire_id.clone()) {
+                result.push((
+                    gate.output_wire_id.clone(),
+                    correct_output_z_id.clone().unwrap(),
+                ));
             }
         }
 
-        println!("\nProcessed:\n");
-        for (index, gate) in processed.into_iter().enumerate() {
-            println!("{index}: {gate:?}");
+        let or_non_xy_gates: Vec<&Gate> = self
+            .gates
+            .iter()
+            .filter(|gate| !gate.has_xy_inputs() && (gate.operation == Operation::Or))
+            .collect();
+
+        for gate in or_non_xy_gates {
+            let relative_xy_gate = output_ids_to_gates
+                .get(&gate.input_wire_id_a)
+                .filter(|gate| gate.has_xy_inputs())
+                .or(output_ids_to_gates.get(&gate.input_wire_id_b))
+                .unwrap();
+
+            let correct_xy_gate = output_ids_to_gates
+                .values()
+                .filter(|g| g.has_input_id(&relative_xy_gate.input_wire_id_a))
+                .filter(|g| g.operation == Operation::And)
+                .last()
+                .unwrap();
+
+            if relative_xy_gate != correct_xy_gate {
+                result.push((
+                    relative_xy_gate.output_wire_id.clone(),
+                    correct_xy_gate.output_wire_id.clone(),
+                ));
+            }
         }
 
-        unimplemented!()
+        result
     }
 
     fn process_gate(&self, gate: &Gate) -> Option<Wire> {
         let (input_id_a, input_id_b) = (&gate.input_wire_id_a, &gate.input_wire_id_b);
 
         match (self.wires.get(input_id_a), self.wires.get(input_id_b)) {
-            (Some(wire_a_state), Some(wire_b_state)) => Some(Wire::new(
+            (Some(a_state), Some(b_state)) => Some(Wire::new(
                 &gate.output_wire_id,
-                gate.apply(*wire_a_state, *wire_b_state),
+                gate.apply(*a_state, *b_state),
             )),
             _ => None,
         }
-    }
-
-    fn switch_gate_outputs(&mut self, output_id_a: &str, output_id_b: &str) {
-        unimplemented!()
-    }
-
-    fn z_wires_sorted(&self) -> Vec<Wire> {
-        let mut z_wires: Vec<Wire> = self
-            .wires
-            .iter()
-            .filter(|(id, _)| id.starts_with('z'))
-            .map(|(id, state)| Wire::new(id, *state))
-            .collect();
-
-        z_wires.sort_by(|a, b| a.id.cmp(&b.id));
-
-        z_wires
     }
 
     fn output_ids_to_gates(&self) -> HashMap<String, Gate> {
@@ -200,6 +199,27 @@ impl CircuitBoard {
             .iter()
             .map(|gate| (gate.output_wire_id.clone(), gate.clone()))
             .collect()
+    }
+
+    fn wires_sorted(&self, starts_with: char) -> Vec<Wire> {
+        let mut wires: Vec<Wire> = self
+            .wires
+            .iter()
+            .filter(|(id, _)| id.starts_with(starts_with))
+            .map(|(id, state)| Wire::new(id, *state))
+            .collect();
+
+        wires.sort_by(|a, b| a.id.cmp(&b.id));
+
+        wires
+    }
+
+    fn relative_z_id_for_id(id: &str) -> Option<String> {
+        if id.starts_with('x') || id.starts_with('y') {
+            Some(id.replace(['x', 'y'], "z"))
+        } else {
+            None
+        }
     }
 
     fn parse_wires_input(input: &[String]) -> HashMap<String, bool> {
@@ -328,7 +348,7 @@ mod tests {
     }
 
     #[test]
-    fn test_circuit_board_z_wires_sorted() {
+    fn test_circuit_board_wires_sorted() {
         let circuit_board = CircuitBoard::from([
             "z11: 1",
             "z00: 1",
@@ -351,13 +371,13 @@ mod tests {
             Wire::new("z22", true),
         ];
 
-        let result = circuit_board.z_wires_sorted();
+        let result = circuit_board.wires_sorted('z');
 
         assert_eq!(result, expected);
     }
 
     #[test]
-    fn test_circuit_board_number_from_z_wires() {
+    fn test_circuit_board_number_from_wires() {
         let circuit_board = CircuitBoard::from([
             "z11: 1",
             "z00: 1",
@@ -370,7 +390,20 @@ mod tests {
             "x00 AND y00 -> q00",
         ]);
 
-        assert_eq!(circuit_board.number_from_z_wires(), 87);
+        assert_eq!(circuit_board.number_from_wires('z'), 87);
+    }
+
+    #[test]
+    fn test_circuit_board_relative_z_id_for_id() {
+        assert_eq!(
+            CircuitBoard::relative_z_id_for_id("x12"),
+            Some(String::from("z12"))
+        );
+        assert_eq!(
+            CircuitBoard::relative_z_id_for_id("y02"),
+            Some(String::from("z02"))
+        );
+        assert_eq!(CircuitBoard::relative_z_id_for_id("tst"), None);
     }
 
     #[test]
@@ -390,6 +423,6 @@ mod tests {
 
         circuit_board.process();
 
-        assert_eq!(circuit_board.number_from_z_wires(), 4);
+        assert_eq!(circuit_board.number_from_wires('z'), 4);
     }
 }
